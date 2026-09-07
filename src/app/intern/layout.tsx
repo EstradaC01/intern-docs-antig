@@ -35,29 +35,29 @@ export default async function InternLayout({ children }: { children: React.React
   return (
     <div className="min-h-screen bg-surface-muted flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-20 bg-surface-bg border-b border-border-default px-6 py-4 flex items-center justify-between shrink-0">
+      <header className="sticky top-0 z-20 bg-brand-primary border-b border-brand-primary-hover px-6 py-4 flex items-center justify-between shrink-0 shadow-xs">
         <div className="flex items-center gap-4">
           <Link href="/intern" className="flex items-center gap-3 group">
-            <div className="h-10 w-10 rounded-xl bg-brand-primary flex items-center justify-center text-white p-2 shrink-0 group-hover:opacity-90 transition-opacity">
+            <div className="h-10 w-10 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center text-white p-2 shrink-0 group-hover:bg-white/20 transition-colors">
               <LogoMark className="h-full w-full" />
             </div>
             <div>
-              <Wordmark className="text-xl" />
-              <p className="text-xs text-text-muted hidden sm:block">Makerspace Document Tracking</p>
+              <Wordmark className="text-xl" onDark />
+              <p className="text-xs text-slate-300 hidden sm:block">Makerspace Document Tracking</p>
             </div>
           </Link>
         </div>
 
         <div className="flex items-center gap-4">
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-semibold text-text-primary">{dbUser?.email}</p>
+            <p className="text-sm font-semibold text-white">{dbUser?.email}</p>
             {daysRemaining !== null && (
-              <p className="text-xs text-text-muted">
+              <p className="text-xs text-slate-300">
                 {daysRemaining > 0 ? `${daysRemaining} days remaining` : 'Internship ended'}
               </p>
             )}
           </div>
-          <SignOutButton />
+          <SignOutButton className="border-white/25 text-white hover:bg-white/10 hover:text-white bg-transparent shadow-none" />
         </div>
       </header>
 

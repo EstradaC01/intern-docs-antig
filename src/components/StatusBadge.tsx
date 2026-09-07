@@ -35,6 +35,11 @@ const STATUS_VISUALS: Record<string, StatusVisual> = {
     badgeClass: 'bg-status-approved/10 text-emerald-800 border-status-approved/30',
     dotClass: 'bg-status-approved',
   },
+  COMPLETED: {
+    label: 'Completed',
+    badgeClass: 'bg-status-approved/10 text-emerald-800 border-status-approved/30',
+    dotClass: 'bg-status-approved',
+  },
   IN_REVIEW: {
     label: 'In Review',
     badgeClass: 'bg-status-in-review/10 text-amber-800 border-status-in-review/30',
@@ -48,8 +53,13 @@ const STATUS_VISUALS: Record<string, StatusVisual> = {
   },
   RETURNED: {
     label: 'Returned',
-    badgeClass: 'bg-status-returned/10 text-rose-800 border-status-returned/30',
-    dotClass: 'bg-status-returned',
+    badgeClass: 'bg-brand-accent/10 text-brand-accent border-brand-accent/30',
+    dotClass: 'bg-brand-accent',
+  },
+  OVERDUE: {
+    label: 'Overdue',
+    badgeClass: 'bg-red-50 text-red-800 border-red-200',
+    dotClass: 'bg-red-600',
   },
   DRAFT: {
     label: 'Draft',
@@ -82,10 +92,10 @@ const STATUS_VISUALS: Record<string, StatusVisual> = {
 };
 
 export function StatusBadge({ state, isOverdue, className = '' }: StatusBadgeProps) {
-  if (isOverdue && state !== 'APPROVED' && state !== 'PURGED') {
+  if (isOverdue && state !== 'APPROVED' && state !== 'COMPLETED' && state !== 'PURGED') {
     return (
       <span
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200 ${className}`}
+        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-800 border border-red-200 ${className}`}
       >
         <span className="h-1.5 w-1.5 rounded-full bg-red-600" aria-hidden="true" />
         Overdue

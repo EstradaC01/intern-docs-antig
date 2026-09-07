@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { XIcon } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
+import { ProgressBar } from './ProgressBar';
 import { RequirementRecord, SubmissionVersionRecord, ApprovalRecord } from '@lib/data/submissions';
 import { SubmissionTimelineModal } from './SubmissionTimelineModal';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -198,24 +199,23 @@ export function InternChecklist({
             {internEmail ? `Logged in as ${internEmail}` : 'Track your required submission progress.'}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-surface-muted text-text-muted border border-border-default">
-            {items.filter((i) => i.state === 'APPROVED').length} / {items.length} Completed
-          </span>
-        </div>
+        <ProgressBar
+          completed={items.filter((i) => i.state === 'APPROVED' || i.state === 'COMPLETED').length}
+          total={items.length}
+        />
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 bg-surface-bg p-4 rounded-xl border border-border-default shadow-xs">
-        <div>
-          <label htmlFor="checklist-filter-req" className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">
+      <div className="flex flex-wrap items-center gap-3 bg-surface-bg p-3.5 rounded-xl border border-border-default shadow-xs">
+        <div className="inline-flex items-center bg-surface-muted border border-border-default rounded-lg px-3 py-1.5 focus-within:ring-1 focus-within:ring-brand-primary focus-within:border-brand-primary transition-all">
+          <label htmlFor="checklist-filter-req" className="text-[10px] font-bold text-text-muted uppercase tracking-wider select-none shrink-0 pr-2 border-r border-border-default">
             Requirement
           </label>
           <select
             id="checklist-filter-req"
             value={filterReq}
             onChange={(e) => setFilterReq(e.target.value)}
-            className="text-xs p-1.5 rounded border border-border-default bg-surface-muted text-text-primary"
+            className="text-xs bg-transparent pl-2 text-text-primary font-medium focus:outline-none cursor-pointer"
           >
             <option value="ALL">All Requirements</option>
             {items.map((item) => (
@@ -225,15 +225,15 @@ export function InternChecklist({
             ))}
           </select>
         </div>
-        <div>
-          <label htmlFor="checklist-filter-state" className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">
+        <div className="inline-flex items-center bg-surface-muted border border-border-default rounded-lg px-3 py-1.5 focus-within:ring-1 focus-within:ring-brand-primary focus-within:border-brand-primary transition-all">
+          <label htmlFor="checklist-filter-state" className="text-[10px] font-bold text-text-muted uppercase tracking-wider select-none shrink-0 pr-2 border-r border-border-default">
             Status
           </label>
           <select
             id="checklist-filter-state"
             value={filterState}
             onChange={(e) => setFilterState(e.target.value)}
-            className="text-xs p-1.5 rounded border border-border-default bg-surface-muted text-text-primary"
+            className="text-xs bg-transparent pl-2 text-text-primary font-medium focus:outline-none cursor-pointer"
           >
             {STATE_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -277,9 +277,14 @@ export function InternChecklist({
                 </div>
 
                 {/* Right Action / Details */}
-                <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
+                <div className="flex items-center gap-2.5 self-end sm:self-center shrink-0 flex-wrap sm:flex-nowrap">
                   {req.template_url && (
-                    <Button size="sm" variant="outline" onClick={() => handleDownloadTemplate(req.id)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDownloadTemplate(req.id)}
+                      className="border-border-default text-text-muted hover:text-text-primary hover:bg-surface-hover font-medium text-xs shadow-none"
+                    >
                       Download Template
                     </Button>
                   )}
@@ -311,12 +316,22 @@ export function InternChecklist({
                   )}
 
                   {['SUBMITTED', 'IN_REVIEW', 'RETURNED', 'APPROVED'].includes(item.state) && sub?.id && (
-                    <Button size="sm" variant="outline" onClick={() => setTimelineSubId(sub.id!)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setTimelineSubId(sub.id!)}
+                      className="border-border-default text-text-muted hover:text-text-primary hover:bg-surface-hover font-medium text-xs shadow-none"
+                    >
                       Timeline
                     </Button>
                   )}
                   {['SUBMITTED', 'IN_REVIEW'].includes(item.state) && sub?.id && (
-                    <Button size="sm" variant="outline" onClick={() => handleDownload(sub.id!)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDownload(sub.id!)}
+                      className="border-border-default text-text-muted hover:text-text-primary hover:bg-surface-hover font-medium text-xs shadow-none"
+                    >
                       View Submitted
                     </Button>
                   )}
@@ -331,8 +346,16 @@ export function InternChecklist({
                       <strong>Due:</strong>{' '}
                       {item.dueDate ? new Date(item.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Flexible'}
                     </span>
-                    {item.daysRemaining !== null && item.state !== 'APPROVED' && (
-                      <span className={item.daysRemaining <= 3 ? 'text-rose-600 font-bold' : ''}>
+                    {item.daysRemaining !== null && item.state !== 'APPROVED' && item.state !== 'COMPLETED' && (
+                      <span
+                        className={
+                          item.daysRemaining < 0 || item.isOverdue
+                            ? 'text-red-600 font-bold'
+                            : item.daysRemaining <= 3
+                            ? 'text-brand-accent font-semibold'
+                            : 'text-text-muted'
+                        }
+                      >
                         ({item.daysRemaining < 0 ? `${Math.abs(item.daysRemaining)} days overdue` : `${item.daysRemaining} days remaining`})
                       </span>
                     )}
@@ -365,14 +388,14 @@ export function InternChecklist({
 
               {/* Return Comment Alert Box */}
               {item.state === 'RETURNED' && activeVer?.return_comment && (
-                <div className="mt-3 rounded-lg bg-rose-50 p-3 text-xs border border-rose-200 text-rose-900">
-                  <div className="flex items-center gap-1.5 font-bold mb-1">
-                    <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="mt-3 rounded-lg bg-red-50 p-3 text-xs border border-red-200 text-red-900">
+                  <div className="flex items-center gap-1.5 font-bold mb-1 text-red-800">
+                    <svg className="h-3.5 w-3.5 shrink-0 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                     <span>Supervisor Return Feedback (v{activeVer.version_number}):</span>
                   </div>
-                  <p className="pl-4 italic">&ldquo;{activeVer.return_comment}&rdquo;</p>
+                  <p className="pl-5 italic text-red-950">&ldquo;{activeVer.return_comment}&rdquo;</p>
                 </div>
               )}
 
