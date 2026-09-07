@@ -68,14 +68,22 @@ export async function proxy(request: NextRequest) {
   // Route classification
   const pathname = request.nextUrl.pathname;
   const isAuthCallback = pathname.startsWith('/auth');
+  const isCronRoute = pathname.startsWith('/api/cron');
   const isLoginPage = pathname.startsWith('/login');
   const isRegisterPage = pathname.startsWith('/register');
   const isAcceptInvite = pathname.startsWith('/accept-invite');
   const isForgotPassword = pathname.startsWith('/forgot-password');
   const isResetPassword = pathname.startsWith('/reset-password');
 
-  // Allow all /auth routes unconditionally (callback code exchange, signout, OTP verification)
-  if (isAuthCallback) {
+  // Allow all /auth routes unconditionally (callback code exchange, signout, OTP verification).
+  // Also allow /api/cron/* unconditionally: these are system-to-system calls from
+  // pg_cron -> pg_net (supabase/migrations/20240101000019_schedule_jobs.sql), authenticated
+  // by a shared CRON_SECRET header checked inside each route handler
+  // (src/app/api/cron/*/route.ts), never by a Supabase session. Without this exemption an
+  // unauthenticated pg_net POST was redirected to /login before the handler's secret check
+  // ever ran -- pg_net doesn't follow redirects, so the retention sweep and daily digest
+  // jobs never actually executed on schedule.
+  if (isAuthCallback || isCronRoute) {
     return supabaseResponse;
   }
 

@@ -1,3 +1,7 @@
+// Plain CommonJS Node script (no "type": "module" in package.json), run directly via
+// `node scripts/send_temp_reset_link.js` -- require() is intentional here, not an
+// oversight of the app's ESM/TS conventions.
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { createClient } = require('@supabase/supabase-js');
 const { Resend } = require('resend');
 

@@ -33,12 +33,18 @@ test.describe('Unauthenticated routing', () => {
     await expect(page.getByText(/invalid email or password/i)).toBeVisible();
   });
 
-  test('accept-invite page renders without a valid token (shows the base onboarding form)', async ({ page }) => {
+  test('accept-invite page never shows a password form without a valid invitation token', async ({ page }) => {
+    // The full-name-at-signup feature this test originally covered was deliberately
+    // reverted (docs/16-post-launch-changes.md, 2026-08-28) -- accept-invite never
+    // collects a name. The invariant worth guarding here is the security-relevant one:
+    // src/app/(auth)/accept-invite/page.tsx only renders the password-setting form once
+    // `userEmail` is set from a verified session, which requires a token/code/hash in the
+    // URL. With none supplied, the form must never appear, at any point -- checked without
+    // waiting on the page's supabase.auth.getUser() session probe to resolve, since that's
+    // a real network round trip to the configured Supabase project and not this smoke
+    // test's concern.
     await page.goto('/accept-invite');
     await expect(page.getByText(/welcome to interndocs/i)).toBeVisible();
-    await expect(page.locator('#fullName')).toBeVisible();
-    await expect(page.locator('#password')).toBeVisible();
-    // No session yet -> role unknown -> intern-only fields (dates, privacy ack) must not show.
-    await expect(page.locator('#internshipStart')).toHaveCount(0);
+    await expect(page.locator('#password')).toHaveCount(0);
   });
 });
