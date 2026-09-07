@@ -8,12 +8,14 @@ interface SignaturePadProps {
   currentSignatureUrl?: string | null;
   lastUpdatedAt?: string | null;
   onSaveSignature: (formData: FormData) => Promise<{ success?: boolean; error?: string }>;
+  onSuccess?: () => void;
 }
 
 export function SignaturePad({
   currentSignatureUrl,
   lastUpdatedAt,
   onSaveSignature,
+  onSuccess,
 }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -229,9 +231,13 @@ export function SignaturePad({
 
       setConfirmOpen(false);
       setSuccessMsg('Signature enrolled successfully!');
-      setTimeout(() => {
-        window.location.reload();
-      }, 1200);
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        setTimeout(() => {
+          window.location.reload();
+        }, 1200);
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to save signature.';
       setConfirmError(msg);

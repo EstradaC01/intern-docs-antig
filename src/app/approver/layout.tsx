@@ -3,6 +3,9 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@lib/supabase/server';
 import { RoleSidebar } from '@/components/RoleSidebar';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function ApproverLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

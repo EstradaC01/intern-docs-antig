@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { humanizeCode } from '@/lib/utils';
 import { Button } from './ui/button';
+import { DocumentViewerModal } from './DocumentViewerModal';
 import { AuditLogEntry } from '@lib/data/audit';
 
 interface AuditLogTableProps {
@@ -19,6 +20,16 @@ export function AuditLogTable({ initialLogs, onGetDownloadUrlAction }: AuditLogT
   const [actionFilter, setActionFilter] = useState<string>('all');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  // In-page Document Viewer Modal State
+  const [viewerItem, setViewerItem] = useState<{
+    title: string;
+    subtitle?: string;
+    log?: AuditLogEntry;
+  } | null>(null);
+  const [viewerUrl, setViewerUrl] = useState<string | null>(null);
+  const [isViewerLoading, setIsViewerLoading] = useState(false);
+  const [viewerError, setViewerError] = useState<string | null>(null);
 
   // Hardcoded for MVP, usually you'd query total count to hide "Load More"
   const [hasMore, setHasMore] = useState(initialLogs.length >= 100);
@@ -59,20 +70,32 @@ export function AuditLogTable({ initialLogs, onGetDownloadUrlAction }: AuditLogT
     fetchLogs(actorFilter, logs.length + 100);
   };
 
-  const handleViewFile = async (submissionId: string) => {
+  const handleViewFile = async (submissionId: string, log?: AuditLogEntry) => {
     if (!onGetDownloadUrlAction) return;
+    setDownloadingId(submissionId);
+    setViewerItem({
+      title: log?.submission?.requirement_name || 'Audited Document',
+      subtitle: log ? `Audit Entry #${log.id.slice(0, 8)} • Action: ${humanizeCode(log.action)}` : undefined,
+      log,
+    });
+    setViewerUrl(null);
+    setIsViewerLoading(true);
+    setViewerError(null);
+
     try {
-      setDownloadingId(submissionId);
       const res = await onGetDownloadUrlAction(submissionId);
       if (res.error) throw new Error(res.error);
       if (res.signedUrl) {
-        window.open(res.signedUrl, '_blank');
+        setViewerUrl(res.signedUrl);
+      } else {
+        throw new Error('No document download link available');
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to open file';
-      alert(msg);
+      setViewerError(msg);
     } finally {
       setDownloadingId(null);
+      setIsViewerLoading(false);
     }
   };
 
@@ -222,7 +245,7 @@ export function AuditLogTable({ initialLogs, onGetDownloadUrlAction }: AuditLogT
                       <button
                         type="button"
                         disabled={downloadingId === log.target_id}
-                        onClick={() => log.target_id && handleViewFile(log.target_id)}
+                        onClick={() => log.target_id && handleViewFile(log.target_id, log)}
                         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-brand-primary/10 hover:bg-brand-primary/20 text-brand-primary text-[11px] font-semibold border border-brand-primary/20 transition-colors disabled:opacity-50"
                       >
                         {downloadingId === log.target_id ? (
@@ -341,7 +364,7 @@ export function AuditLogTable({ initialLogs, onGetDownloadUrlAction }: AuditLogT
                               <button
                                 type="button"
                                 disabled={downloadingId === log.target_id}
-                                onClick={() => log.target_id && handleViewFile(log.target_id)}
+                                onClick={() => log.target_id && handleViewFile(log.target_id, log)}
                                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-brand-primary/10 hover:bg-brand-primary/20 text-brand-primary text-[10px] font-semibold border border-brand-primary/20 transition-colors disabled:opacity-50 shrink-0"
                               >
                                 {downloadingId === log.target_id ? (
@@ -412,6 +435,33 @@ export function AuditLogTable({ initialLogs, onGetDownloadUrlAction }: AuditLogT
             {loading ? 'Loading...' : 'Load More'}
           </Button>
         </div>
+      )}
+
+      {/* In-Page Document Viewer Modal for System Admin */}
+      {viewerItem && (
+        <DocumentViewerModal
+          open={!!viewerItem}
+          onOpenChange={(open) => !open && setViewerItem(null)}
+          title={viewerItem.title}
+          subtitle={viewerItem.subtitle}
+          fileUrl={viewerUrl}
+          isLoadingFile={isViewerLoading}
+          error={viewerError}
+          downloadFileName={`${viewerItem.title.toLowerCase().replace(/[^a-z0-9]/g, '_')}.pdf`}
+          metadata={
+            viewerItem.log?.submission
+              ? {
+                  internEmail: viewerItem.log.submission.intern_email,
+                  versionNumber: viewerItem.log.submission.version_number,
+                  statusBadge: (
+                    <span className="text-[10px] font-semibold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                      {viewerItem.log.submission.state}
+                    </span>
+                  ),
+                }
+              : undefined
+          }
+        />
       )}
     </div>
   );

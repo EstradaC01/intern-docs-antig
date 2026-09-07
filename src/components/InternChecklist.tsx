@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { XIcon } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 import { ProgressBar } from './ProgressBar';
+import { DocumentViewerModal } from './DocumentViewerModal';
 import { RequirementRecord, SubmissionVersionRecord, ApprovalRecord } from '@lib/data/submissions';
 import { SubmissionTimelineModal } from './SubmissionTimelineModal';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -54,6 +55,16 @@ export function InternChecklist({
   const [filterReq, setFilterReq] = useState<string>('ALL');
   const [filterState, setFilterState] = useState<string>('ALL');
 
+  // In-page Document Preview Overlay State
+  const [viewerItem, setViewerItem] = useState<{
+    item: ChecklistItem | null;
+    title: string;
+    subtitle?: string;
+  } | null>(null);
+  const [viewerUrl, setViewerUrl] = useState<string | null>(null);
+  const [isViewerLoading, setIsViewerLoading] = useState(false);
+  const [viewerError, setViewerError] = useState<string | null>(null);
+
   const STATE_OPTIONS = [
     { value: 'ALL', label: 'All Statuses' },
     { value: 'NOT_STARTED', label: 'Not Started' },
@@ -96,33 +107,61 @@ export function InternChecklist({
     setUploadError(null);
   };
 
-  const handleDownload = async (submissionId: string) => {
-    if (!onGetDownloadUrlAction) return;
-    setDownloadError(null);
+  const handleDownload = async (item: ChecklistItem, isSignedPdf = false) => {
+    const sub = item.submission as { id?: string } | null;
+    if (!sub?.id || !onGetDownloadUrlAction) return;
+
+    setViewerItem({
+      item,
+      title: isSignedPdf ? `${item.requirement.name} (Signed PDF)` : item.requirement.name,
+      subtitle: isSignedPdf
+        ? 'Official Digitally Signed Document'
+        : `Version ${item.activeVersion?.version_number || 1} Submission`,
+    });
+    setViewerUrl(null);
+    setIsViewerLoading(true);
+    setViewerError(null);
+
     try {
-      const res = await onGetDownloadUrlAction(submissionId);
+      const res = await onGetDownloadUrlAction(sub.id);
       if (res.error) throw new Error(res.error);
       if (res.signedUrl) {
-        window.open(res.signedUrl, '_blank');
+        setViewerUrl(res.signedUrl);
+      } else {
+        throw new Error('No download link available');
       }
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Download failed';
-      setDownloadError(msg);
+      const msg = e instanceof Error ? e.message : 'Failed to load document';
+      setViewerError(msg);
+    } finally {
+      setIsViewerLoading(false);
     }
   };
 
-  const handleDownloadTemplate = async (requirementId: string) => {
+  const handleDownloadTemplate = async (requirementId: string, reqName: string) => {
     if (!onGetTemplateUrlAction) return;
-    setDownloadError(null);
+    setViewerItem({
+      item: null,
+      title: `${reqName} Template`,
+      subtitle: 'Blank Document Template',
+    });
+    setViewerUrl(null);
+    setIsViewerLoading(true);
+    setViewerError(null);
+
     try {
       const res = await onGetTemplateUrlAction(requirementId);
       if (res.error) throw new Error(res.error);
       if (res.signedUrl) {
-        window.open(res.signedUrl, '_blank');
+        setViewerUrl(res.signedUrl);
+      } else {
+        throw new Error('No template link available');
       }
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Failed to download template';
-      setDownloadError(msg);
+      const msg = e instanceof Error ? e.message : 'Failed to load template';
+      setViewerError(msg);
+    } finally {
+      setIsViewerLoading(false);
     }
   };
 
@@ -282,7 +321,7 @@ export function InternChecklist({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleDownloadTemplate(req.id)}
+                      onClick={() => handleDownloadTemplate(req.id, req.name)}
                       className="border-border-default text-text-muted hover:text-text-primary hover:bg-surface-hover font-medium text-xs shadow-none"
                     >
                       Download Template
@@ -305,7 +344,7 @@ export function InternChecklist({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleDownload(sub.id!)}
+                      onClick={() => handleDownload(item, true)}
                       className="border-status-approved/30 bg-status-approved/10 text-emerald-800 hover:bg-status-approved/20"
                     >
                       <svg className="h-3.5 w-3.5 text-status-approved" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -329,7 +368,7 @@ export function InternChecklist({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleDownload(sub.id!)}
+                      onClick={() => handleDownload(item, false)}
                       className="border-border-default text-text-muted hover:text-text-primary hover:bg-surface-hover font-medium text-xs shadow-none"
                     >
                       View Submitted
@@ -529,6 +568,36 @@ export function InternChecklist({
         <SubmissionTimelineModal
           submissionId={timelineSubId}
           onClose={() => setTimelineSubId(null)}
+        />
+      )}
+
+      {/* Document Viewer Modal */}
+      {viewerItem && (
+        <DocumentViewerModal
+          open={!!viewerItem}
+          onOpenChange={(open) => !open && setViewerItem(null)}
+          title={viewerItem.title}
+          subtitle={viewerItem.subtitle}
+          fileUrl={viewerUrl}
+          isLoadingFile={isViewerLoading}
+          error={viewerError}
+          downloadFileName={`${viewerItem.title.toLowerCase().replace(/[^a-z0-9]/g, '_')}.pdf`}
+          metadata={
+            viewerItem.item
+              ? {
+                  internEmail: internEmail,
+                  versionNumber: viewerItem.item.activeVersion?.version_number,
+                  statusBadge: (
+                    <StatusBadge
+                      state={viewerItem.item.state}
+                      isOverdue={viewerItem.item.isOverdue}
+                    />
+                  ),
+                  templateName: viewerItem.item.requirement.routing_templates?.name,
+                  returnComment: viewerItem.item.activeVersion?.return_comment || undefined,
+                }
+              : undefined
+          }
         />
       )}
     </div>

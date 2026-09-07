@@ -166,12 +166,12 @@ export function AdminDashboardMatrix({ data }: { data: AdminDashboardData }) {
     {
       key: 'OVERDUE', label: 'Overdue', count: summaryCounts.overdue, Icon: AlertTriangle,
       iconIdle: 'bg-red-50 text-red-600', iconActive: 'bg-red-600 text-white',
-      ring: 'ring-red-500',
+      ring: 'ring-red-600',
     },
     {
       key: 'RETURNED', label: 'Returned', count: summaryCounts.returned, Icon: Undo2,
-      iconIdle: 'bg-rose-50 text-rose-600', iconActive: 'bg-rose-600 text-white',
-      ring: 'ring-rose-500',
+      iconIdle: 'bg-brand-primary/10 text-brand-primary', iconActive: 'bg-brand-primary text-white',
+      ring: 'ring-brand-primary',
     },
   ] as const;
 
@@ -222,7 +222,7 @@ export function AdminDashboardMatrix({ data }: { data: AdminDashboardData }) {
                 role="tab"
                 aria-selected={viewMode === 'needs-action'}
                 onClick={() => setViewMode('needs-action')}
-                className={`px-3 py-1.5 rounded-lg font-semibold transition-colors ${viewMode === 'needs-action' ? 'bg-surface-bg text-brand-primary shadow-xs' : 'text-text-muted hover:text-text-primary'}`}
+                className={`px-3 py-1.5 rounded-lg font-semibold transition-colors ${viewMode === 'needs-action' ? 'bg-brand-primary text-white shadow-xs' : 'text-text-muted hover:text-text-primary'}`}
               >
                 Needs Action
               </button>
@@ -231,7 +231,7 @@ export function AdminDashboardMatrix({ data }: { data: AdminDashboardData }) {
                 role="tab"
                 aria-selected={viewMode === 'full'}
                 onClick={() => setViewMode('full')}
-                className={`px-3 py-1.5 rounded-lg font-semibold transition-colors ${viewMode === 'full' ? 'bg-surface-bg text-brand-primary shadow-xs' : 'text-text-muted hover:text-text-primary'}`}
+                className={`px-3 py-1.5 rounded-lg font-semibold transition-colors ${viewMode === 'full' ? 'bg-brand-primary text-white shadow-xs' : 'text-text-muted hover:text-text-primary'}`}
               >
                 Full Grid
               </button>
@@ -281,7 +281,12 @@ export function AdminDashboardMatrix({ data }: { data: AdminDashboardData }) {
             </div>
           )}
         </div>
-        <Button onClick={handleExport} disabled={isExporting} variant="outline" className="gap-1.5">
+        <Button
+          onClick={handleExport}
+          disabled={isExporting}
+          variant="outline"
+          className="border-brand-primary text-brand-primary hover:bg-brand-primary/5 hover:border-brand-primary hover:text-brand-primary font-semibold gap-1.5"
+        >
           <Download className="h-3.5 w-3.5" aria-hidden="true" />
           {isExporting ? 'Exporting...' : 'Export CSV'}
         </Button>

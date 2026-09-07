@@ -1,8 +1,10 @@
 'use client';
 
+// Force client chunk cache invalidation
 import React, { useState, useMemo } from 'react';
 import { XIcon } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
+import { DocumentViewerModal } from './DocumentViewerModal';
 import { RequirementRecord, SubmissionVersionRecord } from '@lib/data/submissions';
 import Link from 'next/link';
 import { SubmissionTimelineModal } from './SubmissionTimelineModal';
@@ -39,6 +41,17 @@ function waitTimeToneClass(waitingHours: number, slaDays: number): string {
   if (waitingHours >= targetHours) return 'text-red-700 font-bold';
   if (waitingHours >= targetHours * 0.7) return 'text-amber-600 font-semibold';
   return 'text-text-muted';
+}
+
+function getRowStatusEdgeClass(sub: ApproverQueueItem, slaDays: number): string {
+  const targetHours = slaDays * 24;
+  if (sub.isOverdue || sub.state === 'OVERDUE' || sub.waitingHours >= targetHours) {
+    return 'border-l-4 border-l-red-500'; // red = overdue
+  }
+  if (sub.waitingHours >= targetHours * 0.7) {
+    return 'border-l-4 border-l-amber-500'; // amber = pending-soon
+  }
+  return 'border-l-4 border-l-slate-300'; // gray/neutral = on-track
 }
 
 export interface ApproverUser {
@@ -88,6 +101,19 @@ export function ApproverQueue({
   const [filterSchool, setFilterSchool] = useState<string>('ALL');
   const [filterBatch, setFilterBatch] = useState<string>('ALL');
 
+  // In-page Document Review Overlay State
+  const [viewerSub, setViewerSub] = useState<ApproverQueueItem | null>(null);
+  const [viewerUrl, setViewerUrl] = useState<string | null>(null);
+  const [isViewerLoading, setIsViewerLoading] = useState(false);
+  const [viewerError, setViewerError] = useState<string | null>(null);
+  const [activeSigPreview, setActiveSigPreview] = useState(signaturePreviewUrl);
+  const [activeHasSig, setActiveHasSig] = useState(hasSignature);
+
+  React.useEffect(() => {
+    setActiveSigPreview(signaturePreviewUrl);
+    setActiveHasSig(hasSignature);
+  }, [signaturePreviewUrl, hasSignature]);
+
   const schoolOptions = useMemo(
     () => Array.from(new Set(items.map((i) => i.users?.school).filter((s): s is string => !!s))).sort(),
     [items]
@@ -128,29 +154,102 @@ export function ApproverQueue({
 
   const closeModal = () => {
     setSelectedSub(null);
+    setViewerSub(null);
     setModalType(null);
     setReturnComment('');
     setReassignReason('');
     setActionError(null);
   };
 
-  const handleDownload = async (sub: ApproverQueueItem) => {
-    setDownloadError(null);
+  const openViewerModal = async (sub: ApproverQueueItem) => {
+    setViewerSub(sub);
+    setSelectedSub(sub);
+    setViewerUrl(null);
+    setIsViewerLoading(true);
+    setViewerError(null);
+    setActionError(null);
+
     try {
       const res = await onGetDownloadUrlAction(sub.id);
       if (res.error) throw new Error(res.error);
       if (res.signedUrl) {
-        window.open(res.signedUrl, '_blank');
+        setViewerUrl(res.signedUrl);
+      } else {
+        throw new Error('No document preview link available');
       }
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Download failed';
-      setDownloadError(msg);
+      const msg = e instanceof Error ? e.message : 'Failed to load document preview';
+      setViewerError(msg);
+    } finally {
+      setIsViewerLoading(false);
     }
+  };
+
+  const handleModalApprove = async () => {
+    if (!viewerSub) return;
+    if (!hasSignature) {
+      setActionError('You must enroll a signature before you can approve.');
+      return;
+    }
+    setIsProcessing(true);
+    setActionError(null);
+    try {
+      const res = await onApproveAction(viewerSub.id);
+      if (res.error) throw new Error(res.error);
+      setViewerSub(null);
+      window.location.reload();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Approval failed.';
+      setActionError(msg);
+      throw e;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleModalReturn = async (comment: string) => {
+    if (!viewerSub) return;
+    setIsProcessing(true);
+    setActionError(null);
+    try {
+      const res = await onReturnAction(viewerSub.id, comment);
+      if (res.error) throw new Error(res.error);
+      setViewerSub(null);
+      window.location.reload();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Return failed.';
+      setActionError(msg);
+      throw e;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleModalReassign = async (newApproverId: string, reason: string) => {
+    if (!viewerSub || !onReassignAction) return;
+    setIsProcessing(true);
+    setActionError(null);
+    try {
+      const res = await onReassignAction(viewerSub.id, newApproverId, reason);
+      if (res.error) throw new Error(res.error);
+      setViewerSub(null);
+      window.location.reload();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Reassignment failed.';
+      setActionError(msg);
+      throw e;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDownload = async (sub: ApproverQueueItem) => {
+    openViewerModal(sub);
   };
 
   const handleConfirmApprove = async () => {
     if (!selectedSub) return;
-    if (!hasSignature) {
+    if (!activeHasSig) {
       setActionError('You must enroll a signature before you can approve.');
       return;
     }
@@ -280,9 +379,11 @@ export function ApproverQueue({
               )}
             </div>
           )}
-          <div className="text-right">
+          <div className="text-right flex flex-col items-end gap-1">
             <span className="text-xs font-semibold uppercase tracking-wider text-text-muted">Pending Review</span>
-            <p className="text-lg font-bold text-amber-600">{filteredItems.length}{filteredItems.length !== items.length ? ` / ${items.length}` : ''}</p>
+            <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-brand-accent text-white shadow-xs">
+              {filteredItems.length}{filteredItems.length !== items.length ? ` / ${items.length}` : ''}
+            </span>
           </div>
         </div>
       </div>
@@ -305,7 +406,7 @@ export function ApproverQueue({
         <div className="bg-surface-bg rounded-xl border border-border-default shadow-xs overflow-hidden">
           <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Submission review queue">
             <table className="w-full text-left text-sm">
-              <thead className="bg-surface-muted border-b border-border-default text-xs uppercase font-semibold text-text-muted">
+              <thead className="bg-brand-primary/[0.06] border-b border-border-default text-xs uppercase font-semibold text-text-muted">
                 <tr>
                   <th className="px-6 py-4">Intern / Submitter</th>
                   <th className="px-6 py-4">Requirement</th>
@@ -320,9 +421,10 @@ export function ApproverQueue({
                   const activeVer = sub.activeVersion;
                   const slaDays = sub.routing_snapshot?.sla_days ?? sub.requirements?.routing_templates?.sla_days ?? 2;
                   const waitToneClass = waitTimeToneClass(sub.waitingHours, slaDays);
+                  const rowEdgeClass = getRowStatusEdgeClass(sub, slaDays);
                   return (
                     <tr key={sub.id} className="hover:bg-surface-hover transition-colors align-top">
-                      <td className="px-6 py-4 font-medium text-text-primary align-top">
+                      <td className={`px-6 py-4 font-medium text-text-primary align-top ${rowEdgeClass}`}>
                         {sub.users?.full_name || sub.users?.email || 'Unknown'}
                         {(sub.users?.school || sub.users?.batch) && (
                           <div className="text-[10px] font-normal text-text-muted">
@@ -356,13 +458,26 @@ export function ApproverQueue({
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right space-x-1.5 whitespace-nowrap align-top">
-                        <Button size="sm" variant="ghost" onClick={() => handleDownload(sub)} title="View / Download Document">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => openViewerModal(sub)}
+                          title="View Document in Overlay"
+                          className="text-brand-primary/80 hover:text-brand-primary hover:underline font-medium"
+                        >
                           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
                           View
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setTimelineSubId(sub.id)} title="View timeline history">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setTimelineSubId(sub.id)}
+                          title="View timeline history"
+                          className="text-brand-primary/80 hover:text-brand-primary hover:underline font-medium"
+                        >
                           Timeline
                         </Button>
                         {canReassign && (
@@ -372,6 +487,7 @@ export function ApproverQueue({
                             onClick={() => openReassignModal(sub)}
                             disabled={sub.canUserApprove === false && sub.stepRole === 'admin'}
                             title="Reassign to another approver"
+                            className="text-brand-primary/80 hover:text-brand-primary hover:underline font-medium"
                           >
                             Reassign
                           </Button>
@@ -381,7 +497,7 @@ export function ApproverQueue({
                           variant="outline"
                           onClick={() => openReturnModal(sub)}
                           disabled={sub.canUserApprove === false && sub.stepRole === 'admin'}
-                          className="border-status-returned/30 bg-status-returned/10 text-rose-700 hover:bg-status-returned/20"
+                          className="border-border-default bg-transparent text-text-primary hover:text-rose-700 hover:border-rose-300 hover:bg-rose-50/50 transition-colors"
                         >
                           Return
                         </Button>
@@ -399,7 +515,13 @@ export function ApproverQueue({
                             {sub.disabledReason || 'Awaiting Admin Approval'}
                           </Button>
                         ) : (
-                          <Button type="button" size="sm" variant="success" onClick={() => openApproveModal(sub)} className="shadow-xs">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="success"
+                            onClick={() => openApproveModal(sub)}
+                            className="shadow-xs hover:bg-emerald-800 hover:shadow-md hover:shadow-brand-primary/20 focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 transition-all"
+                          >
                             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
@@ -445,11 +567,11 @@ export function ApproverQueue({
                 <span className="block text-[10px] uppercase font-bold text-text-muted mb-1">
                   Your Signature Stamp to be Applied:
                 </span>
-                {hasSignature && signaturePreviewUrl ? (
+                {activeHasSig && activeSigPreview ? (
                   <div className="h-20 flex items-center justify-center bg-white rounded-lg border border-border-default p-2">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={signaturePreviewUrl}
+                      src={activeSigPreview}
                       alt="Your Enrolled Signature"
                       className="max-h-full max-w-full object-contain filter drop-shadow-xs"
                     />
@@ -483,7 +605,7 @@ export function ApproverQueue({
               type="button"
               variant="success"
               onClick={handleConfirmApprove}
-              disabled={isProcessing || !hasSignature}
+              disabled={isProcessing || !activeHasSig}
             >
               {isProcessing ? 'Compositing & Stamping...' : 'Confirm & Apply Signature'}
             </Button>
@@ -622,6 +744,57 @@ export function ApproverQueue({
         <SubmissionTimelineModal
           submissionId={timelineSubId}
           onClose={() => setTimelineSubId(null)}
+        />
+      )}
+
+      {/* In-Page Document Review & Sign Overlay */}
+      {viewerSub && (
+        <DocumentViewerModal
+          open={!!viewerSub}
+          onOpenChange={(open) => {
+            if (!open) {
+              setViewerSub(null);
+              setViewerUrl(null);
+              setActionError(null);
+            }
+          }}
+          title={viewerSub.requirements?.name || 'Requirement Document'}
+          subtitle={`Submitted by ${viewerSub.users?.full_name || viewerSub.users?.email || 'Intern'}`}
+          fileUrl={viewerUrl}
+          isLoadingFile={isViewerLoading}
+          error={viewerError}
+          downloadFileName={`${(viewerSub.requirements?.name || 'document').toLowerCase().replace(/[^a-z0-9]/g, '_')}.pdf`}
+          canReview={viewerSub.canUserApprove !== false}
+          hasSignature={activeHasSig}
+          signaturePreviewUrl={activeSigPreview}
+          onSignatureUpdated={(newUrl) => {
+            setActiveSigPreview(newUrl);
+            setActiveHasSig(true);
+          }}
+          signatureEnrollUrl="/approver/signature"
+          isProcessingReview={isProcessing}
+          onApprove={viewerSub.canUserApprove !== false ? handleModalApprove : undefined}
+          onReturn={handleModalReturn}
+          canReassign={canReassign}
+          approversList={approversList}
+          currentApproverEmail={approverEmail}
+          onReassign={canReassign ? handleModalReassign : undefined}
+          metadata={{
+            internEmail: viewerSub.users?.email,
+            submittedAt: viewerSub.created_at,
+            versionNumber: viewerSub.activeVersion?.version_number,
+            statusBadge: (
+              <StatusBadge state={viewerSub.state} isOverdue={viewerSub.isOverdue} />
+            ),
+            templateName: viewerSub.routing_snapshot ? 'Custom Routing' : 'Default Workflow',
+            stepInfo:
+              viewerSub.totalSteps && viewerSub.totalSteps > 1
+                ? `Step ${viewerSub.current_step} of ${viewerSub.totalSteps} (${
+                    viewerSub.stepRole === 'admin' ? 'Admin Review' : 'Supervisor'
+                  })`
+                : '1-Step Review',
+            returnComment: viewerSub.activeVersion?.return_comment || undefined,
+          }}
         />
       )}
     </div>

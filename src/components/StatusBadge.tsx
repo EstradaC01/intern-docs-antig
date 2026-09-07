@@ -53,8 +53,8 @@ const STATUS_VISUALS: Record<string, StatusVisual> = {
   },
   RETURNED: {
     label: 'Returned',
-    badgeClass: 'bg-brand-accent/10 text-brand-accent border-brand-accent/30',
-    dotClass: 'bg-brand-accent',
+    badgeClass: 'bg-brand-primary/10 text-brand-primary border-brand-primary/30',
+    dotClass: 'bg-brand-primary',
   },
   OVERDUE: {
     label: 'Overdue',

@@ -86,7 +86,7 @@ export function RoleSidebar({ roleTitle, userName, navItems, children }: RoleSid
                 className={`
                   block pl-3.5 pr-4 py-2.5 rounded-lg text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-primary border-l-[3px]
                   ${isActive
-                    ? 'bg-brand-muted text-brand-primary font-bold border-brand-accent'
+                    ? 'bg-brand-primary text-white font-bold border-transparent shadow-xs'
                     : 'text-text-primary hover:bg-surface-hover hover:text-brand-primary font-medium border-transparent'
                   }
                 `}
@@ -98,7 +98,7 @@ export function RoleSidebar({ roleTitle, userName, navItems, children }: RoleSid
           })()}
         </nav>
 
-        <div className="p-6 border-t border-border-default shrink-0">
+        <div className="p-6 pb-12 border-t border-border-default shrink-0">
           <p className="text-sm font-semibold text-text-primary truncate mb-3" title={userName}>
             {userName}
           </p>
