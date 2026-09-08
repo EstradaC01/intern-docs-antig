@@ -68,7 +68,7 @@ export default async function SystemAdminRetentionPage() {
 
         <div className="bg-surface-bg border border-border-default rounded-2xl p-5 shadow-xs space-y-1">
           <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">Surviving Approval Records</span>
-          <div className="text-2xl font-bold text-emerald-700">100%</div>
+          <div className="text-2xl font-bold text-status-approved-text">100%</div>
           <p className="text-[11px] text-text-muted">Retained for at least 3 years (FR-23)</p>
         </div>
       </div>

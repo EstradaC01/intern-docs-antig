@@ -16,6 +16,24 @@
   --status-overdue: #DC2626;
   --status-deleted: #9CA3AF;
 
+  /* Readable text over a status tint (e.g. bg-status-approved at 10% opacity) — the 700/800 shade of the same hue. */
+  --status-not-started-text: #334155;
+  --status-draft-text: #334155;
+  --status-submitted-text: #1D4ED8;
+  --status-in-review-text: #92400E;
+  --status-returned-text: #B91C1C;
+  --status-approved-text: #15803D;
+  --status-overdue-text: #991B1B;
+  --status-deleted-text: #475569;
+
+  /* Role-differentiation badges (UserManagementTable, AdminUsersTable) — a separate namespace from --status-*, which carries workflow-state meaning. Intern reuses the neutral surface/text-muted tokens directly. */
+  --role-system-admin-bg: #F3E8FF;
+  --role-system-admin-text: #6B21A8;
+  --role-admin-bg: #DBEAFE;
+  --role-admin-text: #1E40AF;
+  --role-approver-bg: #FEF3C7;
+  --role-approver-text: #92400E;
+
   --surface-bg: #FFFFFF;
   --surface-muted: #F8FAFC;
   --surface-hover: #F1F5F9;      /* row/item hover — replaces ad hoc slate-50/100 */
@@ -44,6 +62,22 @@
   --color-status-approved: #22C55E;
   --color-status-overdue: #DC2626;
   --color-status-deleted: #9CA3AF;
+
+  --color-status-not-started-text: #334155;
+  --color-status-draft-text: #334155;
+  --color-status-submitted-text: #1D4ED8;
+  --color-status-in-review-text: #92400E;
+  --color-status-returned-text: #B91C1C;
+  --color-status-approved-text: #15803D;
+  --color-status-overdue-text: #991B1B;
+  --color-status-deleted-text: #475569;
+
+  --color-role-system-admin-bg: #F3E8FF;
+  --color-role-system-admin-text: #6B21A8;
+  --color-role-admin-bg: #DBEAFE;
+  --color-role-admin-text: #1E40AF;
+  --color-role-approver-bg: #FEF3C7;
+  --color-role-approver-text: #92400E;
 
   --color-surface-bg: #FFFFFF;
   --color-surface-muted: #F8FAFC;

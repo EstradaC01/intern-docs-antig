@@ -10,6 +10,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { AdminInviteForm, type RoleOption } from '@/components/AdminInviteForm';
+import { Button } from '@/components/ui/button';
 
 interface AdminInviteModalProps {
   onInviteAction: (formData: FormData) => Promise<{ success?: boolean; error?: string; inviteLink?: string | null }>;
@@ -61,16 +62,16 @@ export function AdminInviteModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <button
+      <Button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 font-semibold text-xs transition-all shadow-2xs hover:shadow-xs active:scale-[0.99]"
+        className="gap-2 rounded-xl active:scale-[0.99]"
       >
-        <svg className="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
         </svg>
         <span>{triggerLabel}</span>
-      </button>
+      </Button>
 
       <DialogContent className="max-w-3xl">
         <DialogHeader>

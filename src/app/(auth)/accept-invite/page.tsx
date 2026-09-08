@@ -196,7 +196,7 @@ export default function AcceptInvitePage() {
         {errorMsg && (
           <div
             role="alert"
-            className="rounded-xl bg-rose-50 p-3.5 text-xs text-rose-800 border border-rose-200 leading-relaxed"
+            className="rounded-xl bg-status-returned/10 p-3.5 text-xs text-status-returned-text border border-status-returned/30 leading-relaxed"
           >
             {errorMsg}
           </div>
@@ -225,7 +225,7 @@ export default function AcceptInvitePage() {
               </a>
               <a
                 href="/login"
-                className="inline-flex items-center justify-center w-full rounded-xl border border-border-default bg-white py-2.5 text-xs font-semibold text-text-primary hover:bg-slate-50 transition-colors"
+                className="inline-flex items-center justify-center w-full rounded-xl border border-border-default bg-white py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-hover transition-colors"
               >
                 Back to Sign in
               </a>

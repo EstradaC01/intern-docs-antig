@@ -86,14 +86,14 @@ export default async function ApproverDashboard() {
       <AutoRefresh intervalMs={15_000} />
       {/* Missing Signature Alert Banner */}
       {!hasSignature && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+        <div className="bg-status-in-review/10 border border-status-in-review/30 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
           <div className="flex items-start gap-2.5">
-            <svg className="h-5 w-5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="h-5 w-5 text-status-in-review-text shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             <div>
-              <h4 className="text-xs font-bold text-amber-900">Signature Required for Approvals</h4>
-              <p className="text-xs text-amber-800 mt-0.5">
+              <h4 className="text-xs font-bold text-status-in-review-text">Signature Required for Approvals</h4>
+              <p className="text-xs text-status-in-review-text mt-0.5">
                 You have not enrolled your digital signature stamp yet. You must enroll a signature before you can approve submissions.
               </p>
             </div>

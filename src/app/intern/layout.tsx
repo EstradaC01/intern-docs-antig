@@ -43,7 +43,7 @@ export default async function InternLayout({ children }: { children: React.React
             </div>
             <div>
               <Wordmark className="text-xl" onDark />
-              <p className="text-xs text-slate-300 hidden sm:block">Makerspace Document Tracking</p>
+              <p className="text-xs text-white/70 hidden sm:block">Makerspace Document Tracking</p>
             </div>
           </Link>
         </div>
@@ -52,7 +52,7 @@ export default async function InternLayout({ children }: { children: React.React
           <div className="text-right hidden sm:block">
             <p className="text-sm font-semibold text-white">{dbUser?.email}</p>
             {daysRemaining !== null && (
-              <p className="text-xs text-slate-300">
+              <p className="text-xs text-white/70">
                 {daysRemaining > 0 ? `${daysRemaining} days remaining` : 'Internship ended'}
               </p>
             )}

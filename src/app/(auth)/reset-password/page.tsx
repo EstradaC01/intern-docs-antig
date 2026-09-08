@@ -206,10 +206,10 @@ export default function ResetPasswordPage() {
         {errorMsg && (
           <div
             role="alert"
-            className="flex items-start gap-3 rounded-xl bg-rose-50 p-3.5 text-xs text-rose-800 border border-rose-200 leading-relaxed"
+            className="flex items-start gap-3 rounded-xl bg-status-returned/10 p-3.5 text-xs text-status-returned-text border border-status-returned/30 leading-relaxed"
           >
             <svg
-              className="h-4 w-4 shrink-0 text-rose-600 mt-0.5"
+              className="h-4 w-4 shrink-0 text-status-returned mt-0.5"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth="2"
@@ -237,9 +237,9 @@ export default function ResetPasswordPage() {
         {/* Expired or invalid session */}
         {!isVerifying && !userEmail && (
           <div className="space-y-4 text-center pt-2">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 border border-amber-200">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-status-in-review/10 border border-status-in-review/30">
               <svg
-                className="h-6 w-6 text-amber-600"
+                className="h-6 w-6 text-status-in-review-text"
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth="2"
@@ -268,7 +268,7 @@ export default function ResetPasswordPage() {
               </Link>
               <Link
                 href="/login"
-                className="inline-flex items-center justify-center w-full rounded-xl border border-border-default bg-white py-2.5 text-xs font-semibold text-text-primary hover:bg-slate-50 transition-colors"
+                className="inline-flex items-center justify-center w-full rounded-xl border border-border-default bg-white py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-hover transition-colors"
               >
                 Back to Sign in
               </Link>

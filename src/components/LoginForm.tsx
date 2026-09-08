@@ -20,10 +20,10 @@ export function LoginForm({ error, reason, reset, onLoginAction }: LoginFormProp
       {reset === 'success' && (
         <div
           role="status"
-          className="flex items-start gap-3 rounded-xl bg-emerald-50 px-4 py-3 text-xs text-emerald-900 border border-emerald-200 leading-relaxed"
+          className="flex items-start gap-3 rounded-xl bg-status-approved/10 px-4 py-3 text-xs text-status-approved-text border border-status-approved/30 leading-relaxed"
         >
           <svg
-            className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5"
+            className="h-4 w-4 shrink-0 text-status-approved mt-0.5"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth="2"
@@ -46,7 +46,7 @@ export function LoginForm({ error, reason, reset, onLoginAction }: LoginFormProp
       {reason === 'timeout' && (
         <div
           role="alert"
-          className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900 border border-amber-200"
+          className="rounded-xl bg-status-in-review/10 px-4 py-3 text-sm text-status-in-review-text border border-status-in-review/30"
         >
           Your session expired due to inactivity. Please sign in again.
         </div>
@@ -56,10 +56,10 @@ export function LoginForm({ error, reason, reset, onLoginAction }: LoginFormProp
       {reason === 'pending_approval' && (
         <div
           role="alert"
-          className="rounded-xl bg-amber-50 px-4 py-3 text-xs text-amber-900 border border-amber-200 space-y-1"
+          className="rounded-xl bg-status-in-review/10 px-4 py-3 text-xs text-status-in-review-text border border-status-in-review/30 space-y-1"
         >
           <p className="font-semibold">Registration Pending Approval</p>
-          <p className="text-amber-800/90">
+          <p className="text-status-in-review-text/90">
             Your account is awaiting administrator approval. An email notification will be sent once you are admitted to the cohort.
           </p>
         </div>
@@ -69,7 +69,7 @@ export function LoginForm({ error, reason, reset, onLoginAction }: LoginFormProp
       {error && (
         <div
           role="alert"
-          className="rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-800 border border-rose-200"
+          className="rounded-xl bg-status-returned/10 px-4 py-3 text-sm text-status-returned-text border border-status-returned/30"
         >
           {error}
         </div>
@@ -93,7 +93,7 @@ export function LoginForm({ error, reason, reset, onLoginAction }: LoginFormProp
           className="
             w-full rounded-xl border border-border-default bg-white
             px-4 py-3 text-sm text-text-primary
-            placeholder:text-slate-400
+            placeholder:text-text-muted
             focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20
             focus:outline-none transition-all
           "
@@ -119,7 +119,7 @@ export function LoginForm({ error, reason, reset, onLoginAction }: LoginFormProp
             className="
               w-full rounded-xl border border-border-default bg-white
               px-4 py-3 pr-12 text-sm text-text-primary
-              placeholder:text-slate-400
+              placeholder:text-text-muted
               focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20
               focus:outline-none transition-all
             "
@@ -130,7 +130,7 @@ export function LoginForm({ error, reason, reset, onLoginAction }: LoginFormProp
             aria-label={showPassword ? 'Hide password' : 'Show password'}
             className="
               absolute right-3 top-1/2 -translate-y-1/2
-              p-1 rounded-lg text-slate-400
+              p-1 rounded-lg text-text-muted
               hover:text-brand-primary hover:bg-brand-primary/5
               focus:outline-none focus:ring-2 focus:ring-brand-primary/30
               transition-colors
@@ -159,7 +159,7 @@ export function LoginForm({ error, reason, reset, onLoginAction }: LoginFormProp
             type="checkbox"
             name="remember"
             className="
-              h-4 w-4 rounded border-slate-300 text-brand-primary
+              h-4 w-4 rounded border-border-strong text-brand-primary
               focus:ring-2 focus:ring-brand-primary/30 focus:ring-offset-0
               transition-colors cursor-pointer
             "

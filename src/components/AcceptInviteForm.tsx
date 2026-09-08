@@ -190,7 +190,7 @@ export function AcceptInviteForm({ onGetContextAction, onCompleteAction }: Accep
         </div>
 
         {errorMsg && (
-          <div role="alert" className="rounded-xl bg-rose-50 p-3.5 text-xs text-rose-800 border border-rose-200">
+          <div role="alert" className="rounded-xl bg-status-returned/10 p-3.5 text-xs text-status-returned-text border border-status-returned/30">
             {errorMsg}
           </div>
         )}

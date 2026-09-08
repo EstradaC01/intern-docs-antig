@@ -47,19 +47,19 @@ export default async function SystemAdminOverviewPage() {
 
         <div className="bg-surface-bg border border-border-default rounded-2xl p-5 shadow-xs space-y-2">
           <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">Active In-Review</span>
-          <div className="text-3xl font-extrabold text-amber-600">{inReviewCount}</div>
+          <div className="text-3xl font-extrabold text-status-in-review-text">{inReviewCount}</div>
           <p className="text-[11px] text-text-muted">Currently in review across cohorts</p>
         </div>
 
         <div className="bg-surface-bg border border-border-default rounded-2xl p-5 shadow-xs space-y-2">
           <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">Sealed Approvals</span>
-          <div className="text-3xl font-extrabold text-emerald-600">{approvedCount}</div>
+          <div className="text-3xl font-extrabold text-status-approved-text">{approvedCount}</div>
           <p className="text-[11px] text-text-muted">3-year immutable attestation records</p>
         </div>
 
         <div className="bg-surface-bg border border-border-default rounded-2xl p-5 shadow-xs space-y-2">
           <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">Purged Files (30d)</span>
-          <div className="text-3xl font-extrabold text-slate-600">{purgedCount}</div>
+          <div className="text-3xl font-extrabold text-text-muted">{purgedCount}</div>
           <p className="text-[11px] text-text-muted">Personal data minimized lawfully</p>
         </div>
       </div>
@@ -70,7 +70,7 @@ export default async function SystemAdminOverviewPage() {
           <h2 className="text-base font-bold text-text-primary">
             Data Privacy (RA 10173) &amp; Security Posture
           </h2>
-          <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-status-approved/10 px-2.5 py-1 rounded-full border border-status-approved/30">
+          <span className="inline-flex items-center gap-1 text-xs font-semibold text-status-approved-text bg-status-approved/10 px-2.5 py-1 rounded-full border border-status-approved/30">
             <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>

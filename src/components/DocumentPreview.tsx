@@ -24,7 +24,7 @@ export function isImageFileUrl(fileUrl: string | null): boolean {
 }
 
 const DEFAULT_CLASS_NAME =
-  'flex-1 h-full min-h-[360px] bg-slate-100 p-1 sm:p-2 overflow-hidden flex items-center justify-center relative';
+  'flex-1 h-full min-h-[360px] bg-surface-muted p-1 sm:p-2 overflow-hidden flex items-center justify-center relative';
 
 export function DocumentPreview({
   fileUrl,
@@ -63,11 +63,11 @@ export function DocumentPreview({
       ) : error ? (
         <div
           role="alert"
-          className="max-w-md p-6 bg-surface-bg rounded-xl border border-rose-200 text-center space-y-3"
+          className="max-w-md p-6 bg-surface-bg rounded-xl border border-status-returned/30 text-center space-y-3"
         >
-          <AlertTriangle className="h-8 w-8 text-rose-600 mx-auto" />
-          <h4 className="text-sm font-bold text-rose-900">Preview Unavailable</h4>
-          <p className="text-xs text-rose-700">{error}</p>
+          <AlertTriangle className="h-8 w-8 text-status-returned mx-auto" />
+          <h4 className="text-sm font-bold text-status-returned-text">Preview Unavailable</h4>
+          <p className="text-xs text-status-returned-text">{error}</p>
           {fileUrl && (
             <Button size="sm" onClick={handleDownloadClick} className="mt-2 gap-1.5">
               <Download className="h-3.5 w-3.5" />

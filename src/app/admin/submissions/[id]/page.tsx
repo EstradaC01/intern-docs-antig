@@ -118,7 +118,7 @@ export default async function AdminSubmissionViewPage({ params }: { params: Prom
               </p>
             </div>
           ) : (
-            <div className="mb-6 bg-status-submitted/10 border border-status-submitted/30 rounded-lg p-4 text-sm text-blue-800">
+            <div className="mb-6 bg-status-submitted/10 border border-status-submitted/30 rounded-lg p-4 text-sm text-status-submitted-text">
               File bytes are still securely stored. Retention purge has not yet occurred.
             </div>
           )}
@@ -138,7 +138,7 @@ export default async function AdminSubmissionViewPage({ params }: { params: Prom
                       <p className="text-xs text-text-muted mt-1">{new Date(appr.created_at).toLocaleString()}</p>
                     </div>
                     <div className="text-right">
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-status-approved/10 border border-status-approved/30 px-2.5 py-1 rounded mb-1">
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-status-approved-text bg-status-approved/10 border border-status-approved/30 px-2.5 py-1 rounded mb-1">
                         <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>

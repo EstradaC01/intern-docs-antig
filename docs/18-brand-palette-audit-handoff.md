@@ -1,6 +1,6 @@
 # Brand Palette Compliance Audit — Handoff
 
-**Date:** 2026-09-08. **Status:** Audited, not yet fixed. This doc is the complete handoff — everything needed to act on this without re-running the audit.
+**Date:** 2026-09-08. **Status:** Fixed. All 167 findings addressed (see Resolution section at the end); this doc is kept as the historical record of the audit and the decisions made while fixing it.
 
 ## Why this exists
 
@@ -148,3 +148,14 @@ Rough sizing: step 1 is trivial. Step 4 touches ~15 files but is pure find-and-r
 ## How this was produced (to reproduce or extend)
 
 Parallel workflow, one agent per area (auth / intern / approver / admin-core / admin-ops / system-admin / shared), each given the token reference above and instructed to grep its assigned files for raw Tailwind color-shade classes (`slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose` + shade number) and raw hex literals, then classify each hit per the severity rubric above. Excluded by design: white/black/transparent/currentColor, un-migrated shadcn default-theme internals (`bg-background`/`text-foreground`/etc.), decorative non-semantic colors, and the already-documented `StatusBadge.tsx` gap.
+
+## Resolution (2026-09-08)
+
+All 167 findings fixed in the order this doc suggested. The three open design decisions were resolved as follows — see `docs/07-design-system.md` §1 for the resulting token list:
+
+1. **Status text tokens (Decision #1).** Added `--status-*-text` alongside every existing `--status-*` token — the 700/800-shade formula the doc proposed (e.g. `--status-approved-text: #15803D` next to `--status-approved: #22C55E`). Every `bg-status-*/10` + `border-status-*/30` pairing now gets its matching `-text` token for the label instead of a raw `emerald-700`/`amber-800`/etc.
+2. **Text-on-dark-muted (Decision #2).** Standardized on `text-white/70` (the doc's second option) rather than adding a token — matches the existing `bg-white/10`/`border-white/15` opacity pattern already used elsewhere in `intern/layout.tsx`'s header.
+3. **Role-badge tokens (Decision #3).** Added a dedicated `--role-*-bg` / `--role-*-text` pair for `system-admin` (purple), `admin` (blue), and `approver` (amber) — a separate namespace from `--status-*` so a role color is never confused with a workflow-state color. `intern` reuses `surface-muted`/`text-muted` directly (no color-coding, since it's the unprivileged default).
+4. **Shared primitives (Decision #4).** `ui/button.tsx`'s `destructive`/`success` variants and `ui/input.tsx`'s `aria-invalid` state now route through `--status-returned`/`--status-approved`, fixing the propagation source before any call site was touched.
+
+The 1 HIGH, all 35 MEDIUM, and all 130 LOW findings were then swept file-by-file per the areas above. `StatusBadge.tsx` remains the one intentionally-excluded exception (pre-existing, separately documented gap). Verified with `tsc --noEmit`, `next build` (production build succeeds, all new token utility classes confirmed present in the compiled CSS), and a live check of the fixed `AdminInviteModal.tsx` CTA and `AdminDashboardMatrix.tsx` stat cards in the browser.

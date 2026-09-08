@@ -42,7 +42,7 @@ export function AdminSignatureOverlay({
         className={
           hasSignature
             ? ''
-            : 'border-amber-300 bg-amber-50 text-amber-900 font-bold hover:bg-amber-100'
+            : 'border-status-in-review/40 bg-status-in-review/10 text-status-in-review-text font-bold hover:bg-status-in-review/20'
         }
       >
         {hasSignature ? (
@@ -57,7 +57,7 @@ export function AdminSignatureOverlay({
           </>
         ) : (
           <>
-            <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-4 h-4 text-status-in-review-text" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             <span>Enroll Signature</span>
@@ -68,7 +68,7 @@ export function AdminSignatureOverlay({
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden">
           <DialogHeader className="flex-row items-center gap-2.5 px-6 py-4 border-b border-border-default bg-surface-muted space-y-0">
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${hasSignature ? 'bg-status-approved/10 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${hasSignature ? 'bg-status-approved/10 text-status-approved-text' : 'bg-status-in-review/20 text-status-in-review-text'}`}>
               {hasSignature ? (
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
