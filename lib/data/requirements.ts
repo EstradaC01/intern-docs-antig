@@ -166,6 +166,84 @@ export async function updateRequirement(id: string, input: Partial<z.infer<typeo
   return updatedReq;
 }
 
+/**
+ * Requirements are never force-deleted out from under existing work: `submissions.requirement_id`
+ * is a NOT NULL FK with no ON DELETE clause (RESTRICT), and FR-23 retains submissions/approvals
+ * permanently -- so a requirement with any submission against it (in any state, including
+ * PURGED, since submission rows themselves are never deleted) simply cannot be removed. This
+ * checks that up front and returns a friendly error instead of letting a raw FK violation surface.
+ */
+export async function deleteRequirement(id: string) {
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) throw new Error('Not authenticated');
+
+  const { data: dbUser } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (!dbUser || !['admin', 'system_admin'].includes(dbUser.role)) {
+    await logPermissionDenied({
+      actorId: user.id,
+      attempted: 'DELETE_REQUIREMENT',
+      targetType: 'requirements',
+      targetId: id,
+    });
+    throw new Error('Unauthorized: Only administrators can delete requirements.');
+  }
+
+  const adminClient = createAdminClient();
+
+  const { data: existing, error: fetchErr } = await adminClient
+    .from('requirements')
+    .select('name')
+    .eq('id', id)
+    .single();
+
+  if (fetchErr || !existing) {
+    throw new Error('Requirement not found.');
+  }
+
+  const { count, error: countError } = await adminClient
+    .from('submissions')
+    .select('id', { count: 'exact', head: true })
+    .eq('requirement_id', id);
+
+  if (countError) {
+    throw new Error(`Failed to check existing submissions: ${countError.message}`);
+  }
+  if (count && count > 0) {
+    throw new Error(
+      `"${existing.name}" has ${count} submission${count === 1 ? '' : 's'} against it and cannot be deleted -- submissions and their approval records are retained permanently.`
+    );
+  }
+
+  const { error: deleteError } = await adminClient
+    .from('requirements')
+    .delete()
+    .eq('id', id);
+
+  if (deleteError) {
+    throw new Error(`Failed to delete requirement: ${deleteError.message}`);
+  }
+
+  const reqHeaders = await headers();
+  const ip = reqHeaders.get('x-forwarded-for') || 'unknown';
+
+  await adminClient.from('audit_log').insert({
+    actor_id: user.id,
+    action: 'DELETE_REQUIREMENT',
+    target_id: id,
+    target_type: 'requirements',
+    source_ip: ip,
+    payload: { name: existing.name },
+  });
+
+  return { success: true };
+}
+
 const TEMPLATE_ACCEPTED_TYPES = ['application/pdf', 'image/png', 'image/jpeg'];
 const TEMPLATE_MAX_BYTES = 10 * 1024 * 1024; // matches the `templates` bucket's file_size_limit
 

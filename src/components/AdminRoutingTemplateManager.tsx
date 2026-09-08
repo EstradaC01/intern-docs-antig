@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Workflow, Clock } from 'lucide-react';
+import { Workflow, Clock, Trash2 } from 'lucide-react';
 import type { CreateRoutingTemplateInput } from './AdminRequirementManager';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { ConfirmAction } from '@/components/ConfirmAction';
 
 interface RoutingTemplate {
   id: string;
@@ -17,11 +18,13 @@ interface RoutingTemplate {
 interface AdminRoutingTemplateManagerProps {
   routingTemplates: RoutingTemplate[];
   onCreateTemplate: (data: CreateRoutingTemplateInput) => Promise<{ success?: boolean; error?: string }>;
+  onDeleteTemplate: (templateId: string) => Promise<{ success?: boolean; error?: string }>;
 }
 
 export function AdminRoutingTemplateManager({
   routingTemplates,
   onCreateTemplate,
+  onDeleteTemplate,
 }: AdminRoutingTemplateManagerProps) {
   const [showModal, setShowModal] = useState(false);
   const [name, setName] = useState('');
@@ -29,6 +32,9 @@ export function AdminRoutingTemplateManager({
   const [stepCount, setStepCount] = useState<1 | 2>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<RoutingTemplate | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,6 +68,22 @@ export function AdminRoutingTemplateManager({
     }
   };
 
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await onDeleteTemplate(deleteTarget.id);
+      if (res.error) throw new Error(res.error);
+      setDeleteTarget(null);
+      window.location.reload();
+    } catch (e: unknown) {
+      setDeleteError(e instanceof Error ? e.message : 'Failed to delete template');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -89,10 +111,21 @@ export function AdminRoutingTemplateManager({
                     </p>
                   </div>
                 </div>
-                <span className="shrink-0 flex items-center gap-1 text-[11px] font-semibold text-brand-primary bg-brand-muted px-2.5 py-1 rounded-full border border-border-default whitespace-nowrap">
-                  <Clock className="h-3 w-3" aria-hidden="true" />
-                  {tpl.sla_days ? `${tpl.sla_days}d SLA` : 'No SLA'}
-                </span>
+                <div className="flex items-start gap-2 shrink-0">
+                  <span className="flex items-center gap-1 text-[11px] font-semibold text-brand-primary bg-brand-muted px-2.5 py-1 rounded-full border border-border-default whitespace-nowrap">
+                    <Clock className="h-3 w-3" aria-hidden="true" />
+                    {tpl.sla_days ? `${tpl.sla_days}d SLA` : 'No SLA'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setDeleteTarget(tpl)}
+                    aria-label={`Delete ${tpl.name}`}
+                    title="Delete routing template"
+                    className="p-1.5 rounded-lg text-text-muted hover:text-status-returned-text hover:bg-status-returned/10 transition-colors"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -113,7 +146,7 @@ export function AdminRoutingTemplateManager({
                       </span>
                       <span className="font-semibold text-text-primary text-xs">{s.name || `Step ${idx + 1}`}</span>
                     </div>
-                    <span className="text-[10px] uppercase font-bold text-slate-700 bg-slate-200/60 px-1.5 py-0.5 rounded">
+                    <span className="text-[10px] uppercase font-bold text-text-muted bg-surface-hover px-1.5 py-0.5 rounded">
                       {s.role || 'approver'}
                     </span>
                   </div>
@@ -141,7 +174,7 @@ export function AdminRoutingTemplateManager({
           </DialogHeader>
 
           {errorMsg && (
-            <div role="alert" className="rounded-xl bg-rose-50 p-3 text-xs text-rose-800 border border-rose-200">
+            <div role="alert" className="rounded-xl bg-status-returned/10 p-3 text-xs text-status-returned-text border border-status-returned/30">
               {errorMsg}
             </div>
           )}
@@ -214,6 +247,39 @@ export function AdminRoutingTemplateManager({
             </form>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Routing Template Confirmation */}
+      <ConfirmAction
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteTarget(null);
+            setDeleteError(null);
+          }
+        }}
+        title="Delete this routing template?"
+        description="This permanently removes the routing template. It can only be deleted once no requirement still points to it — repoint any requirements using it to a different template first. Past submissions are unaffected either way, since their approval steps are already frozen at submission time."
+        confirmLabel="Delete Template"
+        variant="destructive"
+        isLoading={isDeleting}
+        loadingLabel="Deleting…"
+        error={deleteError}
+        onConfirm={handleConfirmDelete}
+        typedConfirmation={
+          deleteTarget
+            ? { requiredText: deleteTarget.name, label: `Type "${deleteTarget.name}" to confirm:` }
+            : undefined
+        }
+      >
+        {deleteTarget && (
+          <div className="rounded-xl bg-surface-muted border border-border-default p-3.5 text-sm space-y-1">
+            <strong className="text-text-primary">{deleteTarget.name}</strong>
+            <p className="text-text-muted text-xs">
+              {(deleteTarget.steps || []).length} sequential {(deleteTarget.steps || []).length === 1 ? 'step' : 'steps'} · {deleteTarget.sla_days ? `${deleteTarget.sla_days}d SLA` : 'No SLA'}
+            </p>
+          </div>
+        )}
+      </ConfirmAction>
     </div>
   );
 }

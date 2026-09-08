@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FileText, Upload, Check, Workflow, HardDrive } from 'lucide-react';
+import { FileText, Upload, Check, Workflow, HardDrive, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { ConfirmAction } from '@/components/ConfirmAction';
 
 export interface CreateRequirementInput {
   name: string;
@@ -53,6 +54,7 @@ interface AdminRequirementManagerProps {
   routingTemplates: RoutingTemplate[];
   onCreateRequirement: (data: CreateRequirementInput) => Promise<{ success?: boolean; error?: string }>;
   onUploadTemplate: (requirementId: string, formData: FormData) => Promise<{ success?: boolean; error?: string }>;
+  onDeleteRequirement: (requirementId: string) => Promise<{ success?: boolean; error?: string }>;
 }
 
 export function AdminRequirementManager({
@@ -60,10 +62,14 @@ export function AdminRequirementManager({
   routingTemplates,
   onCreateRequirement,
   onUploadTemplate,
+  onDeleteRequirement,
 }: AdminRequirementManagerProps) {
   const [showReqModal, setShowReqModal] = useState(false);
   const [templateUploadingId, setTemplateUploadingId] = useState<string | null>(null);
   const [templateError, setTemplateError] = useState<Record<string, string>>({});
+  const [deleteTarget, setDeleteTarget] = useState<Requirement | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Requirement form state
   const [name, setName] = useState('');
@@ -135,6 +141,22 @@ export function AdminRequirementManager({
     }
   };
 
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await onDeleteRequirement(deleteTarget.id);
+      if (res.error) throw new Error(res.error);
+      setDeleteTarget(null);
+      window.location.reload();
+    } catch (e: unknown) {
+      setDeleteError(e instanceof Error ? e.message : 'Failed to delete requirement');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Action Header */}
@@ -157,14 +179,25 @@ export function AdminRequirementManager({
                 </span>
                 <div className="min-w-0">
                   <h3 className="font-bold text-sm text-text-primary truncate">{req.name}</h3>
-                  <span className="text-[10px] font-mono text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded">
+                  <span className="text-[10px] font-mono text-text-muted bg-surface-muted px-1.5 py-0.5 rounded">
                     Version {req.version_number}
                   </span>
                 </div>
               </div>
-              <span className="shrink-0 text-[11px] font-semibold text-brand-primary bg-brand-muted px-2.5 py-1 rounded-full border border-border-default whitespace-nowrap">
-                {req.due_date_type === 'relative' ? `Due ${req.due_date_value}d after start` : `Due ${req.due_date_value}`}
-              </span>
+              <div className="flex items-start gap-2 shrink-0">
+                <span className="text-[11px] font-semibold text-brand-primary bg-brand-muted px-2.5 py-1 rounded-full border border-border-default whitespace-nowrap">
+                  {req.due_date_type === 'relative' ? `Due ${req.due_date_value}d after start` : `Due ${req.due_date_value}`}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setDeleteTarget(req)}
+                  aria-label={`Delete ${req.name}`}
+                  title="Delete requirement"
+                  className="p-1.5 rounded-lg text-text-muted hover:text-status-returned-text hover:bg-status-returned/10 transition-colors"
+                >
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+              </div>
             </div>
 
             <p className="text-xs text-text-muted line-clamp-2">{req.description || 'No description'}</p>
@@ -181,7 +214,7 @@ export function AdminRequirementManager({
                   <Workflow className="h-3 w-3 shrink-0" aria-hidden="true" />
                   {req.routing_templates?.name || 'Default (1-Step)'}
                 </span>
-                <span className="text-[10px] font-semibold text-slate-700 bg-white px-2 py-0.5 rounded border border-border-default">
+                <span className="text-[10px] font-semibold text-text-muted bg-surface-bg px-2 py-0.5 rounded border border-border-default">
                   {req.routing_templates?.steps && req.routing_templates.steps.length > 0
                     ? req.routing_templates.steps.map((s) => (s.role === 'admin' ? 'Admin' : 'Supervisor')).join(' → ')
                     : 'Supervisor'}
@@ -191,7 +224,7 @@ export function AdminRequirementManager({
 
             {/* FR-4: optional blank template file interns can download before filling it out */}
             <div className="pt-3 border-t border-border-default/60 flex items-center justify-between gap-2 text-[11px]">
-              <span className={`flex items-center gap-1.5 ${req.template_url ? 'text-emerald-700 font-semibold' : 'text-text-muted'}`}>
+              <span className={`flex items-center gap-1.5 ${req.template_url ? 'text-status-approved-text font-semibold' : 'text-text-muted'}`}>
                 {req.template_url && <Check className="h-3 w-3 shrink-0" aria-hidden="true" />}
                 {req.template_url ? 'Template file attached' : 'No template file'}
               </span>
@@ -210,7 +243,7 @@ export function AdminRequirementManager({
               </label>
             </div>
             {templateError[req.id] && (
-              <p role="alert" className="text-[11px] text-rose-700">{templateError[req.id]}</p>
+              <p role="alert" className="text-[11px] text-status-returned-text">{templateError[req.id]}</p>
             )}
           </div>
         ))}
@@ -233,7 +266,7 @@ export function AdminRequirementManager({
           </DialogHeader>
 
           {errorMsg && (
-            <div role="alert" className="rounded-xl bg-rose-50 p-3 text-xs text-rose-800 border border-rose-200">
+            <div role="alert" className="rounded-xl bg-status-returned/10 p-3 text-xs text-status-returned-text border border-status-returned/30">
               {errorMsg}
             </div>
           )}
@@ -384,6 +417,39 @@ export function AdminRequirementManager({
             </form>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Requirement Confirmation */}
+      <ConfirmAction
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteTarget(null);
+            setDeleteError(null);
+          }
+        }}
+        title="Delete this requirement?"
+        description="This permanently removes the requirement definition. It can only be deleted while it has zero submissions against it — submissions and approval records are retained permanently and this action can never override that."
+        confirmLabel="Delete Requirement"
+        variant="destructive"
+        isLoading={isDeleting}
+        loadingLabel="Deleting…"
+        error={deleteError}
+        onConfirm={handleConfirmDelete}
+        typedConfirmation={
+          deleteTarget
+            ? { requiredText: deleteTarget.name, label: `Type "${deleteTarget.name}" to confirm:` }
+            : undefined
+        }
+      >
+        {deleteTarget && (
+          <div className="rounded-xl bg-surface-muted border border-border-default p-3.5 text-sm space-y-1">
+            <strong className="text-text-primary">{deleteTarget.name}</strong>
+            <p className="text-text-muted text-xs">
+              Version {deleteTarget.version_number} · {deleteTarget.routing_templates?.name || 'Default (1-Step)'}
+            </p>
+          </div>
+        )}
+      </ConfirmAction>
     </div>
   );
 }
