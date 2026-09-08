@@ -116,6 +116,9 @@ export interface SubmissionWithRelations {
   intern_id: string;
   state: SubmissionState;
   current_step: number;
+  /** When the submission entered `current_step` -- the FR-19 digest SLA clock. Distinct
+   *  from `updated_at`, which bumps on any write (e.g. a reassignment). */
+  current_step_entered_at: string | null;
   current_holder_id: string | null;
   due_date: string | null;
   created_at: string;
@@ -552,6 +555,7 @@ export async function uploadSubmission(formData: FormData) {
         requirement_id: requirementId,
         state: SubmissionState.IN_REVIEW, // Advances to IN_REVIEW at step 1
         current_step: 1,
+        current_step_entered_at: new Date().toISOString(),
         current_holder_id: step1HolderId,
         due_date: dueDate ? dueDate.toISOString() : null,
         routing_snapshot: typedReq.routing_templates || null, // FR-8: freeze template at submission time
@@ -570,6 +574,7 @@ export async function uploadSubmission(formData: FormData) {
       .update({
         state: SubmissionState.IN_REVIEW,
         current_step: 1,
+        current_step_entered_at: new Date().toISOString(),
         current_holder_id: step1HolderId,
         due_date: dueDate ? dueDate.toISOString() : null,
         updated_at: new Date().toISOString(),
@@ -755,6 +760,7 @@ export async function resubmitSubmission(formData: FormData) {
     .update({
       state: SubmissionState.IN_REVIEW,
       current_step: 1,
+      current_step_entered_at: new Date().toISOString(),
       current_holder_id: step1HolderId,
       updated_at: new Date().toISOString(),
     })
@@ -980,6 +986,7 @@ export async function approveSubmissionSigned(submissionId: string) {
       .update({
         state: nextState,
         current_step: nextStepNumber,
+        current_step_entered_at: approvalDate.toISOString(),
         current_holder_id: nextHolderId,
         updated_at: approvalDate.toISOString(),
       })
