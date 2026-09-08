@@ -373,56 +373,72 @@ export function ApproverQueue({
       )}
 
       {/* Header Summary */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-surface-bg p-6 rounded-xl border border-border-default shadow-xs">
-        {!hideHeader && (
-          <div>
-            <h2 className="text-xl font-bold text-text-primary">Approver Review Queue</h2>
-            <p className="text-sm text-text-muted mt-1">
-              {approverEmail ? `Logged in as ${approverEmail}` : 'Submissions pending your review.'}
-            </p>
+      {(() => {
+        const filterControls = (schoolOptions.length > 0 || batchOptions.length > 0) && (
+          <div className="flex items-end gap-2">
+            {schoolOptions.length > 0 && (
+              <div>
+                <label htmlFor="queue-filter-school" className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">School</label>
+                <select
+                  id="queue-filter-school"
+                  value={filterSchool}
+                  onChange={(e) => setFilterSchool(e.target.value)}
+                  className="text-xs p-1.5 rounded border border-border-default bg-surface-muted"
+                >
+                  <option value="ALL">All Schools</option>
+                  {schoolOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+            )}
+            {batchOptions.length > 0 && (
+              <div>
+                <label htmlFor="queue-filter-batch" className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Batch</label>
+                <select
+                  id="queue-filter-batch"
+                  value={filterBatch}
+                  onChange={(e) => setFilterBatch(e.target.value)}
+                  className="text-xs p-1.5 rounded border border-border-default bg-surface-muted"
+                >
+                  <option value="ALL">All Batches</option>
+                  {batchOptions.map((b) => <option key={b} value={b}>{b}</option>)}
+                </select>
+              </div>
+            )}
           </div>
-        )}
-        <div className="flex items-center gap-3 ml-auto">
-          {(schoolOptions.length > 0 || batchOptions.length > 0) && (
-            <div className="flex items-end gap-2">
-              {schoolOptions.length > 0 && (
-                <div>
-                  <label htmlFor="queue-filter-school" className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">School</label>
-                  <select
-                    id="queue-filter-school"
-                    value={filterSchool}
-                    onChange={(e) => setFilterSchool(e.target.value)}
-                    className="text-xs p-1.5 rounded border border-border-default bg-surface-muted"
-                  >
-                    <option value="ALL">All Schools</option>
-                    {schoolOptions.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-              )}
-              {batchOptions.length > 0 && (
-                <div>
-                  <label htmlFor="queue-filter-batch" className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Batch</label>
-                  <select
-                    id="queue-filter-batch"
-                    value={filterBatch}
-                    onChange={(e) => setFilterBatch(e.target.value)}
-                    className="text-xs p-1.5 rounded border border-border-default bg-surface-muted"
-                  >
-                    <option value="ALL">All Batches</option>
-                    {batchOptions.map((b) => <option key={b} value={b}>{b}</option>)}
-                  </select>
-                </div>
-              )}
-            </div>
-          )}
+        );
+        const pendingBadge = (
           <div className="text-right flex flex-col items-end gap-1">
             <span className="text-xs font-semibold uppercase tracking-wider text-text-muted">Pending Review</span>
             <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-brand-accent text-white shadow-xs">
               {filteredItems.length}{filteredItems.length !== items.length ? ` / ${items.length}` : ''}
             </span>
           </div>
-        </div>
-      </div>
+        );
+
+        // hideHeader (e.g. /admin/final-approval, which renders its own page heading
+        // above) drops the card chrome entirely and spreads filters/badge to opposite
+        // ends of the row -- rather than reusing the heading-vs-cluster split, which
+        // would otherwise leave the badge stranded with no heading to balance against.
+        return hideHeader ? (
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            {filterControls}
+            <div className="ml-auto">{pendingBadge}</div>
+          </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-surface-bg p-6 rounded-xl border border-border-default shadow-xs">
+            <div>
+              <h2 className="text-xl font-bold text-text-primary">Approver Review Queue</h2>
+              <p className="text-sm text-text-muted mt-1">
+                {approverEmail ? `Logged in as ${approverEmail}` : 'Submissions pending your review.'}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              {filterControls}
+              {pendingBadge}
+            </div>
+          </div>
+        );
+      })()}
 
       {filteredItems.length === 0 ? (
         <div className="bg-surface-bg rounded-xl border border-border-default p-12 text-center">
