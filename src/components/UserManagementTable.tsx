@@ -181,7 +181,7 @@ export function UserManagementTable({ users, onRoleChangeAction, onGroupChangeAc
         <div>
           <h2 className="font-bold text-lg text-text-primary flex items-center gap-2">
             <span>Registered Users</span>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-surface-muted text-text-muted">
               {filteredUsers.length} of {users.length}
             </span>
           </h2>
@@ -190,7 +190,7 @@ export function UserManagementTable({ users, onRoleChangeAction, onGroupChangeAc
 
         <div className="flex items-center gap-3">
           {statusMessage && (
-            <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-800 bg-status-approved/10 px-3 py-1.5 rounded-xl border border-status-approved/30 animate-in fade-in">
+            <div className="flex items-center gap-1.5 text-xs font-medium text-status-approved-text bg-status-approved/10 px-3 py-1.5 rounded-xl border border-status-approved/30 animate-in fade-in">
               <svg className="h-3.5 w-3.5 text-status-approved shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -317,12 +317,12 @@ export function UserManagementTable({ users, onRoleChangeAction, onGroupChangeAc
                   <span
                     className={`inline-block px-2.5 py-0.5 rounded-full font-semibold text-[10px] uppercase tracking-wider ${
                       u.role === 'system_admin'
-                        ? 'bg-purple-100 text-purple-800'
+                        ? 'bg-role-system-admin-bg text-role-system-admin-text'
                         : u.role === 'admin'
-                        ? 'bg-blue-100 text-blue-800'
+                        ? 'bg-role-admin-bg text-role-admin-text'
                         : u.role === 'approver'
-                        ? 'bg-amber-100 text-amber-800'
-                        : 'bg-slate-100 text-slate-700'
+                        ? 'bg-role-approver-bg text-role-approver-text'
+                        : 'bg-surface-muted text-text-muted'
                     }`}
                   >
                     {humanizeCode(u.role)}
@@ -391,12 +391,12 @@ export function UserManagementTable({ users, onRoleChangeAction, onGroupChangeAc
                         />
                       </div>
                       {isDatesDirty(u) && !dateErrors[u.id] && (
-                        <span className="text-[10px] text-amber-700 font-sans font-semibold">
+                        <span className="text-[10px] text-status-in-review-text font-sans font-semibold">
                           {savingDatesFor === u.id ? 'Saving…' : 'Unsaved — use Save Changes above'}
                         </span>
                       )}
                       {dateErrors[u.id] && (
-                        <span role="alert" className="text-[10px] text-rose-700 font-sans">{dateErrors[u.id]}</span>
+                        <span role="alert" className="text-[10px] text-status-returned-text font-sans">{dateErrors[u.id]}</span>
                       )}
                     </div>
                   ) : (
@@ -457,9 +457,9 @@ export function UserManagementTable({ users, onRoleChangeAction, onGroupChangeAc
               <strong className="text-text-primary">{pendingChange.user.email}</strong>
             </div>
             <div className="text-text-muted">
-              <strong className="text-rose-700">{humanizeCode(pendingChange.user.role)}</strong>
+              <strong className="text-status-returned-text">{humanizeCode(pendingChange.user.role)}</strong>
               {' → '}
-              <strong className="text-emerald-700">{humanizeCode(pendingChange.nextRole)}</strong>
+              <strong className="text-status-approved-text">{humanizeCode(pendingChange.nextRole)}</strong>
             </div>
           </div>
         </ConfirmAction>

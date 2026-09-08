@@ -81,7 +81,7 @@ export function SubmissionTimelineModal({ submissionId, onClose }: SubmissionTim
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-primary border-t-transparent" />
             </div>
           ) : error ? (
-            <div className="rounded-lg bg-rose-50 p-3 text-xs text-rose-800 border border-rose-200">
+            <div className="rounded-lg bg-status-returned/10 p-3 text-xs text-status-returned-text border border-status-returned/30">
               {error}
             </div>
           ) : (
@@ -105,10 +105,10 @@ export function SubmissionTimelineModal({ submissionId, onClose }: SubmissionTim
               </div>
 
               {/* Timeline Events */}
-              <div className="relative border-l border-slate-200 ml-3 space-y-6">
+              <div className="relative border-l border-border-default ml-3 space-y-6">
                 {events.map((ev) => (
                   <div key={ev.id} className="relative pl-6">
-                    <div className="absolute -left-1.5 top-1.5 h-3 w-3 rounded-full bg-slate-300 border-2 border-white" />
+                    <div className="absolute -left-1.5 top-1.5 h-3 w-3 rounded-full bg-border-strong border-2 border-white" />
                     <div className="flex flex-col">
                       <span className="text-sm font-bold text-text-primary">
                         {getActionDescription(ev.action)}
@@ -117,7 +117,7 @@ export function SubmissionTimelineModal({ submissionId, onClose }: SubmissionTim
                         {new Date(ev.created_at).toLocaleString()}
                       </span>
                       {ev.users && (
-                        <span className="text-[11px] text-slate-500 mt-0.5">
+                        <span className="text-[11px] text-text-muted mt-0.5">
                           by {ev.users.email} ({humanizeCode(ev.users.role)})
                         </span>
                       )}

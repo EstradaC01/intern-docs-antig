@@ -10,12 +10,12 @@ import {
   CheckCircle2,
   Undo2,
   UserCheck,
-  Download,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { SignaturePad } from '@/components/SignaturePad';
 import { enrollSignatureAction } from '@/app/actions/signatures';
+import { DocumentPreview } from './DocumentPreview';
 
 export interface DocumentViewerModalProps {
   open: boolean;
@@ -94,29 +94,6 @@ export function DocumentViewerModal({
     setCurrentSignaturePreview(signaturePreviewUrl);
     setCurrentHasSignature(hasSignature);
   }, [signaturePreviewUrl, hasSignature]);
-
-  const isImage = Boolean(
-    fileUrl &&
-      (/\.(jpeg|jpg|png|webp|gif)(\?|$)/i.test(fileUrl) ||
-        fileUrl.includes('image/') ||
-        fileUrl.includes('image%2F'))
-  );
-
-  const handleDownloadClick = () => {
-    if (onDownload) {
-      onDownload();
-      return;
-    }
-    if (fileUrl) {
-      const a = document.createElement('a');
-      a.href = fileUrl;
-      a.download = downloadFileName || 'document.pdf';
-      a.target = '_blank';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
-  };
 
   const handleConfirmApprove = async () => {
     if (!onApprove) return;
@@ -220,49 +197,14 @@ export function DocumentViewerModal({
         {/* Modal Main Body */}
         <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden relative">
           {/* Left Canvas: Document Previewer */}
-          <div className="flex-1 h-full min-h-[360px] bg-slate-100 p-1 sm:p-2 overflow-hidden flex items-center justify-center relative">
-            {isLoadingFile ? (
-              <div className="flex flex-col items-center gap-2 text-text-muted">
-                <Loader2 className="h-8 w-8 animate-spin text-brand-primary" />
-                <span className="text-xs font-medium">Generating secure document preview…</span>
-              </div>
-            ) : error ? (
-              <div
-                role="alert"
-                className="max-w-md p-6 bg-surface-bg rounded-xl border border-rose-200 text-center space-y-3"
-              >
-                <AlertTriangle className="h-8 w-8 text-rose-600 mx-auto" />
-                <h4 className="text-sm font-bold text-rose-900">Preview Unavailable</h4>
-                <p className="text-xs text-rose-700">{error}</p>
-                {fileUrl && (
-                  <Button size="sm" onClick={handleDownloadClick} className="mt-2 gap-1.5">
-                    <Download className="h-3.5 w-3.5" />
-                    Download File Instead
-                  </Button>
-                )}
-              </div>
-            ) : fileUrl ? (
-              isImage ? (
-                <div className="w-full h-full overflow-auto flex items-center justify-center p-2">
-                  <img
-                    src={fileUrl}
-                    alt={title}
-                    className="max-h-full max-w-full object-contain rounded shadow-xs bg-white"
-                  />
-                </div>
-              ) : (
-                <iframe
-                  src={fileUrl}
-                  title={title}
-                  className="w-full h-full rounded-lg border border-border-default bg-white shadow-xs"
-                />
-              )
-            ) : (
-              <div className="text-xs text-text-muted text-center p-6">
-                No document file available to preview.
-              </div>
-            )}
-          </div>
+          <DocumentPreview
+            fileUrl={fileUrl}
+            isLoadingFile={isLoadingFile}
+            error={error}
+            title={title}
+            onDownload={onDownload}
+            downloadFileName={downloadFileName}
+          />
 
           {/* Right Panel: Review & Sign Sidebar (for Approvers / Admins) */}
           {canReview && (
@@ -349,12 +291,12 @@ export function DocumentViewerModal({
 
                 {/* Return Comment Warning if already Returned */}
                 {metadata?.returnComment && (
-                  <div className="rounded-lg bg-red-50 p-3 text-xs border border-red-200 text-red-900 space-y-1">
-                    <div className="font-bold flex items-center gap-1.5 text-red-800">
-                      <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-red-600" />
+                  <div className="rounded-lg bg-status-returned/10 p-3 text-xs border border-status-returned/30 text-status-returned-text space-y-1">
+                    <div className="font-bold flex items-center gap-1.5 text-status-returned-text">
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-status-returned" />
                       <span>Previous Return Comment:</span>
                     </div>
-                    <p className="italic text-red-950 pl-5">&ldquo;{metadata.returnComment}&rdquo;</p>
+                    <p className="italic text-status-returned-text pl-5">&ldquo;{metadata.returnComment}&rdquo;</p>
                   </div>
                 )}
 
@@ -362,12 +304,12 @@ export function DocumentViewerModal({
                 {!currentHasSignature && (
                   <div
                     role="alert"
-                    className="rounded-lg bg-amber-50 p-3 text-xs border border-amber-200 text-amber-900 flex items-start gap-2"
+                    className="rounded-lg bg-status-in-review/10 p-3 text-xs border border-status-in-review/30 text-status-in-review-text flex items-start gap-2"
                   >
-                    <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-status-in-review-text mt-0.5" />
                     <div>
                       <p className="font-bold">No Signature Enrolled</p>
-                      <p className="mt-0.5 text-[11px] text-amber-800">
+                      <p className="mt-0.5 text-[11px] text-status-in-review-text">
                         You must enroll your signature stamp before approving documents.
                       </p>
                       <button
@@ -385,13 +327,13 @@ export function DocumentViewerModal({
                 {actionError && (
                   <div
                     role="alert"
-                    className="rounded-lg bg-rose-50 p-3 text-xs text-rose-800 border border-rose-200 flex items-start justify-between gap-2"
+                    className="rounded-lg bg-status-returned/10 p-3 text-xs text-status-returned-text border border-status-returned/30 flex items-start justify-between gap-2"
                   >
                     <span>{actionError}</span>
                     <button
                       type="button"
                       onClick={() => setActionError(null)}
-                      className="text-rose-600 hover:text-rose-800 font-bold"
+                      className="text-status-returned hover:text-status-returned-text font-bold"
                     >
                       ×
                     </button>
@@ -400,9 +342,9 @@ export function DocumentViewerModal({
 
                 {/* Action Forms */}
                 {activeReviewAction === 'return' ? (
-                  <div className="rounded-xl border border-rose-200 bg-rose-50/60 p-3.5 space-y-3">
+                  <div className="rounded-xl border border-status-returned/30 bg-status-returned/10 p-3.5 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-rose-900 flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-status-returned-text flex items-center gap-1.5">
                         <Undo2 className="h-3.5 w-3.5" />
                         Return for Revision
                       </span>
@@ -545,7 +487,7 @@ export function DocumentViewerModal({
                         setActiveReviewAction(activeReviewAction === 'return' ? 'none' : 'return')
                       }
                       disabled={isProcessingReview}
-                      className="flex-1 text-xs text-rose-800 border-rose-200 hover:bg-rose-50"
+                      className="flex-1 text-xs text-status-returned-text border-status-returned/30 hover:bg-status-returned/10"
                     >
                       <Undo2 className="h-3.5 w-3.5 mr-1" />
                       Return
@@ -577,7 +519,7 @@ export function DocumentViewerModal({
 
         {/* In-Modal Signature Editor Overlay (FR-11: in-place signature edit without redirect or new tab) */}
         {isEditingSignature && (
-          <div className="absolute inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="absolute inset-0 z-50 bg-text-primary/70 backdrop-blur-xs flex items-center justify-center p-4">
             <div className="bg-surface-bg rounded-2xl shadow-2xl border border-border-default w-full max-w-xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
               <div className="px-5 py-3.5 border-b border-border-default bg-surface-muted flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2.5">

@@ -36,7 +36,12 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '#lib': path.resolve(__dirname, './lib')
+      '#lib': path.resolve(__dirname, './lib'),
+      // Matches tsconfig.json's actual "@lib/*" path mapping used throughout the app
+      // (route handlers, page.tsx server components). Every existing test that touches
+      // a route handler fully mocks each of its `@lib/...` imports, so this gap never
+      // mattered until a test needed one to resolve for real.
+      '@lib': path.resolve(__dirname, './lib'),
     },
   },
 })

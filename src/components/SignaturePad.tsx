@@ -267,7 +267,7 @@ export function SignaturePad({
                   : 'N/A'}
               </p>
             </div>
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-status-approved/10 text-emerald-700 border border-status-approved/30">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-status-approved/10 text-status-approved-text border border-status-approved/30">
               <span className="h-1.5 w-1.5 rounded-full bg-status-approved" />
               Active
             </span>
@@ -322,13 +322,13 @@ export function SignaturePad({
         </div>
 
         {errorMsg && (
-          <div role="alert" className="mb-4 rounded-lg bg-rose-50 p-3 text-xs text-rose-800 border border-rose-200">
+          <div role="alert" className="mb-4 rounded-lg bg-status-returned/10 p-3 text-xs text-status-returned-text border border-status-returned/30">
             {errorMsg}
           </div>
         )}
 
         {successMsg && (
-          <div role="status" className="mb-4 rounded-lg bg-emerald-50 p-3 text-xs text-emerald-800 border border-emerald-200">
+          <div role="status" className="mb-4 rounded-lg bg-status-approved/10 p-3 text-xs text-status-approved-text border border-status-approved/30">
             {successMsg}
           </div>
         )}
@@ -359,7 +359,7 @@ export function SignaturePad({
                 <span className="text-[11px] text-text-muted">
                   Make sure your signature is clear and centered.
                 </span>
-                <Button type="button" variant="ghost" size="sm" onClick={clearCanvas} className="text-rose-600 hover:text-rose-700 hover:bg-rose-50">
+                <Button type="button" variant="ghost" size="sm" onClick={clearCanvas} className="text-status-returned hover:text-status-returned-text hover:bg-status-returned/10">
                   Clear Canvas
                 </Button>
               </div>

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@lib/supabase/server';
 import { createAdminClient } from '@lib/supabase/admin';
 import { getAdminDashboardData } from '@lib/data/dashboard';
+import { EXPORT_COLUMNS, DEFAULT_EXPORT_COLUMN_KEYS } from '@lib/export/columns';
 import { headers } from 'next/headers';
 
 // FR-21: one row per intern-requirement pair, in the columns the PRD specifies -- not
@@ -9,10 +10,6 @@ import { headers } from 'next/headers';
 // deliberately different-shaped view of the same data).
 function toCsvField(value: string): string {
   return `"${value.replace(/"/g, '""')}"`;
-}
-
-function toCsvDate(value: string | null | undefined): string {
-  return value ? new Date(value).toISOString().split('T')[0] : '';
 }
 
 export async function GET(request: Request) {
@@ -32,6 +29,17 @@ export async function GET(request: Request) {
   const filterSchool = searchParams.get('school') || 'ALL';
   const filterBatch = searchParams.get('batch') || 'ALL';
 
+  // Column selection: unrecognized/missing keys fall back to the original 10, so an
+  // existing bookmarked export link (no `cols` param at all) keeps working unchanged.
+  const colsParam = searchParams.get('cols');
+  const requestedKeys = colsParam
+    ? colsParam.split(',').map((k) => k.trim()).filter(Boolean)
+    : DEFAULT_EXPORT_COLUMN_KEYS;
+  let activeColumns = EXPORT_COLUMNS.filter((c) => requestedKeys.includes(c.key));
+  if (activeColumns.length === 0) {
+    activeColumns = EXPORT_COLUMNS.filter((c) => DEFAULT_EXPORT_COLUMN_KEYS.includes(c.key));
+  }
+
   // Fetch data
   const data = await getAdminDashboardData();
 
@@ -39,11 +47,7 @@ export async function GET(request: Request) {
     ? data.requirements
     : data.requirements.filter(r => r.id === filterReq);
 
-  const header = [
-    'Intern Name', 'Intern Email', 'School', 'Batch',
-    'Requirement', 'State', 'Submitted Date', 'Approved Date', 'Approver', 'Current Holder',
-  ];
-  let csv = header.join(',') + '\n';
+  let csv = activeColumns.map((c) => c.label).join(',') + '\n';
   let resultCount = 0;
 
   for (const intern of data.interns) {
@@ -60,18 +64,7 @@ export async function GET(request: Request) {
       }
       if (filterApprover !== 'ALL' && sub?.current_holder_email !== filterApprover) continue;
 
-      const row = [
-        intern.full_name || '',
-        intern.email,
-        intern.school || '',
-        intern.batch || '',
-        req.name,
-        state,
-        toCsvDate(sub?.submitted_at),
-        toCsvDate(sub?.approved_at),
-        sub?.approver_name || sub?.approver_email || '',
-        sub?.current_holder_name || sub?.current_holder_email || '',
-      ];
+      const row = activeColumns.map((c) => c.getValue(intern, req, sub, state));
       csv += row.map(toCsvField).join(',') + '\n';
       resultCount++;
     }
@@ -88,7 +81,10 @@ export async function GET(request: Request) {
     target_id: null,
     target_type: 'system',
     source_ip: ip,
-    payload: { filterReq, filterState, filterApprover, filterSchool, filterBatch, resultCount },
+    payload: {
+      filterReq, filterState, filterApprover, filterSchool, filterBatch, resultCount,
+      columns: activeColumns.map((c) => c.key),
+    },
   });
 
   return new NextResponse(csv, {

@@ -2,9 +2,10 @@
 
 // Force client chunk cache invalidation
 import React, { useState, useMemo } from 'react';
-import { XIcon } from 'lucide-react';
+import { XIcon, ChevronDown, ChevronRight } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 import { DocumentViewerModal } from './DocumentViewerModal';
+import { DocumentPreview } from './DocumentPreview';
 import { RequirementRecord, SubmissionVersionRecord } from '@lib/data/submissions';
 import Link from 'next/link';
 import { SubmissionTimelineModal } from './SubmissionTimelineModal';
@@ -38,20 +39,20 @@ export interface ApproverQueueItem {
 // at/past it.
 function waitTimeToneClass(waitingHours: number, slaDays: number): string {
   const targetHours = slaDays * 24;
-  if (waitingHours >= targetHours) return 'text-red-700 font-bold';
-  if (waitingHours >= targetHours * 0.7) return 'text-amber-600 font-semibold';
+  if (waitingHours >= targetHours) return 'text-status-overdue-text font-bold';
+  if (waitingHours >= targetHours * 0.7) return 'text-status-in-review-text font-semibold';
   return 'text-text-muted';
 }
 
 function getRowStatusEdgeClass(sub: ApproverQueueItem, slaDays: number): string {
   const targetHours = slaDays * 24;
   if (sub.isOverdue || sub.state === 'OVERDUE' || sub.waitingHours >= targetHours) {
-    return 'border-l-4 border-l-red-500'; // red = overdue
+    return 'border-l-4 border-l-status-overdue'; // red = overdue
   }
   if (sub.waitingHours >= targetHours * 0.7) {
-    return 'border-l-4 border-l-amber-500'; // amber = pending-soon
+    return 'border-l-4 border-l-status-in-review'; // amber = pending-soon
   }
-  return 'border-l-4 border-l-slate-300'; // gray/neutral = on-track
+  return 'border-l-4 border-l-border-default'; // gray/neutral = on-track
 }
 
 export interface ApproverUser {
@@ -108,6 +109,12 @@ export function ApproverQueue({
   const [viewerError, setViewerError] = useState<string | null>(null);
   const [activeSigPreview, setActiveSigPreview] = useState(signaturePreviewUrl);
   const [activeHasSig, setActiveHasSig] = useState(hasSignature);
+
+  // Inline expand-in-row preview state (accordion -- one row at a time).
+  const [expandedSubmissionId, setExpandedSubmissionId] = useState<string | null>(null);
+  const [expandedUrl, setExpandedUrl] = useState<string | null>(null);
+  const [isExpandedLoading, setIsExpandedLoading] = useState(false);
+  const [expandedError, setExpandedError] = useState<string | null>(null);
 
   React.useEffect(() => {
     setActiveSigPreview(signaturePreviewUrl);
@@ -182,6 +189,35 @@ export function ApproverQueue({
       setViewerError(msg);
     } finally {
       setIsViewerLoading(false);
+    }
+  };
+
+  const toggleExpandRow = async (sub: ApproverQueueItem) => {
+    if (expandedSubmissionId === sub.id) {
+      setExpandedSubmissionId(null);
+      setExpandedUrl(null);
+      setExpandedError(null);
+      return;
+    }
+
+    setExpandedSubmissionId(sub.id);
+    setExpandedUrl(null);
+    setExpandedError(null);
+    setIsExpandedLoading(true);
+
+    try {
+      const res = await onGetDownloadUrlAction(sub.id);
+      if (res.error) throw new Error(res.error);
+      if (res.signedUrl) {
+        setExpandedUrl(res.signedUrl);
+      } else {
+        throw new Error('No document preview link available');
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to load document preview';
+      setExpandedError(msg);
+    } finally {
+      setIsExpandedLoading(false);
     }
   };
 
@@ -322,14 +358,14 @@ export function ApproverQueue({
       {downloadError && (
         <div
           role="alert"
-          className="flex items-start justify-between gap-3 rounded-xl bg-rose-50 p-3.5 text-xs text-rose-800 border border-rose-200"
+          className="flex items-start justify-between gap-3 rounded-xl bg-status-returned/10 p-3.5 text-xs text-status-returned-text border border-status-returned/30"
         >
           <span>{downloadError}</span>
           <button
             type="button"
             onClick={() => setDownloadError(null)}
             aria-label="Dismiss error"
-            className="shrink-0 p-0.5 rounded text-rose-600 hover:text-rose-800"
+            className="shrink-0 p-0.5 rounded text-status-returned hover:text-status-returned-text"
           >
             <XIcon className="h-4 w-4" />
           </button>
@@ -337,56 +373,68 @@ export function ApproverQueue({
       )}
 
       {/* Header Summary */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-surface-bg p-6 rounded-xl border border-border-default shadow-xs">
-        {!hideHeader && (
-          <div>
-            <h2 className="text-xl font-bold text-text-primary">Approver Review Queue</h2>
-            <p className="text-sm text-text-muted mt-1">
-              {approverEmail ? `Logged in as ${approverEmail}` : 'Submissions pending your review.'}
-            </p>
+      {(() => {
+        const filterControls = (schoolOptions.length > 0 || batchOptions.length > 0) && (
+          <div className="flex items-end gap-2">
+            {schoolOptions.length > 0 && (
+              <div>
+                <label htmlFor="queue-filter-school" className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">School</label>
+                <select
+                  id="queue-filter-school"
+                  value={filterSchool}
+                  onChange={(e) => setFilterSchool(e.target.value)}
+                  className="text-xs p-1.5 rounded border border-border-default bg-surface-muted"
+                >
+                  <option value="ALL">All Schools</option>
+                  {schoolOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+            )}
+            {batchOptions.length > 0 && (
+              <div>
+                <label htmlFor="queue-filter-batch" className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Batch</label>
+                <select
+                  id="queue-filter-batch"
+                  value={filterBatch}
+                  onChange={(e) => setFilterBatch(e.target.value)}
+                  className="text-xs p-1.5 rounded border border-border-default bg-surface-muted"
+                >
+                  <option value="ALL">All Batches</option>
+                  {batchOptions.map((b) => <option key={b} value={b}>{b}</option>)}
+                </select>
+              </div>
+            )}
           </div>
-        )}
-        <div className="flex items-center gap-3">
-          {(schoolOptions.length > 0 || batchOptions.length > 0) && (
-            <div className="flex items-end gap-2">
-              {schoolOptions.length > 0 && (
-                <div>
-                  <label htmlFor="queue-filter-school" className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">School</label>
-                  <select
-                    id="queue-filter-school"
-                    value={filterSchool}
-                    onChange={(e) => setFilterSchool(e.target.value)}
-                    className="text-xs p-1.5 rounded border border-border-default bg-surface-muted"
-                  >
-                    <option value="ALL">All Schools</option>
-                    {schoolOptions.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-              )}
-              {batchOptions.length > 0 && (
-                <div>
-                  <label htmlFor="queue-filter-batch" className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Batch</label>
-                  <select
-                    id="queue-filter-batch"
-                    value={filterBatch}
-                    onChange={(e) => setFilterBatch(e.target.value)}
-                    className="text-xs p-1.5 rounded border border-border-default bg-surface-muted"
-                  >
-                    <option value="ALL">All Batches</option>
-                    {batchOptions.map((b) => <option key={b} value={b}>{b}</option>)}
-                  </select>
-                </div>
-              )}
-            </div>
-          )}
+        );
+        const pendingBadge = (
           <div className="text-right flex flex-col items-end gap-1">
             <span className="text-xs font-semibold uppercase tracking-wider text-text-muted">Pending Review</span>
             <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-brand-accent text-white shadow-xs">
               {filteredItems.length}{filteredItems.length !== items.length ? ` / ${items.length}` : ''}
             </span>
           </div>
-        </div>
-      </div>
+        );
+
+        return hideHeader ? (
+          <div className="flex flex-wrap items-center justify-between gap-4 bg-surface-bg p-6 rounded-xl border border-border-default shadow-xs">
+            {filterControls}
+            <div className="ml-auto">{pendingBadge}</div>
+          </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-surface-bg p-6 rounded-xl border border-border-default shadow-xs">
+            <div>
+              <h2 className="text-xl font-bold text-text-primary">Approver Review Queue</h2>
+              <p className="text-sm text-text-muted mt-1">
+                {approverEmail ? `Logged in as ${approverEmail}` : 'Submissions pending your review.'}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              {filterControls}
+              {pendingBadge}
+            </div>
+          </div>
+        );
+      })()}
 
       {filteredItems.length === 0 ? (
         <div className="bg-surface-bg rounded-xl border border-border-default p-12 text-center">
@@ -423,7 +471,8 @@ export function ApproverQueue({
                   const waitToneClass = waitTimeToneClass(sub.waitingHours, slaDays);
                   const rowEdgeClass = getRowStatusEdgeClass(sub, slaDays);
                   return (
-                    <tr key={sub.id} className="hover:bg-surface-hover transition-colors align-top">
+                    <React.Fragment key={sub.id}>
+                    <tr className="hover:bg-surface-hover transition-colors align-top">
                       <td className={`px-6 py-4 font-medium text-text-primary align-top ${rowEdgeClass}`}>
                         {sub.users?.full_name || sub.users?.email || 'Unknown'}
                         {(sub.users?.school || sub.users?.batch) && (
@@ -451,13 +500,27 @@ export function ApproverQueue({
                         <div className="space-y-1">
                           <StatusBadge state={sub.state} isOverdue={sub.isOverdue} />
                           {sub.totalSteps && sub.totalSteps > 1 && (
-                            <span className="block text-[10px] font-mono font-bold text-slate-500">
+                            <span className="block text-[10px] font-mono font-bold text-text-muted">
                               Step {sub.current_step} of {sub.totalSteps} ({sub.stepRole === 'admin' ? 'Admin Review' : 'Supervisor'})
                             </span>
                           )}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right space-x-1.5 whitespace-nowrap align-top">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => toggleExpandRow(sub)}
+                          title={expandedSubmissionId === sub.id ? 'Collapse preview' : 'Expand preview'}
+                          aria-expanded={expandedSubmissionId === sub.id}
+                          className="text-text-muted hover:text-text-primary px-1.5"
+                        >
+                          {expandedSubmissionId === sub.id ? (
+                            <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+                          ) : (
+                            <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+                          )}
+                        </Button>
                         <Button
                           size="sm"
                           variant="ghost"
@@ -497,7 +560,7 @@ export function ApproverQueue({
                           variant="outline"
                           onClick={() => openReturnModal(sub)}
                           disabled={sub.canUserApprove === false && sub.stepRole === 'admin'}
-                          className="border-border-default bg-transparent text-text-primary hover:text-rose-700 hover:border-rose-300 hover:bg-rose-50/50 transition-colors"
+                          className="border-border-default bg-transparent text-text-primary hover:text-status-returned-text hover:border-status-returned/40 hover:bg-status-returned/10 transition-colors"
                         >
                           Return
                         </Button>
@@ -520,7 +583,7 @@ export function ApproverQueue({
                             size="sm"
                             variant="success"
                             onClick={() => openApproveModal(sub)}
-                            className="shadow-xs hover:bg-emerald-800 hover:shadow-md hover:shadow-brand-primary/20 focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 transition-all"
+                            className="shadow-xs hover:bg-status-approved-text hover:shadow-md hover:shadow-brand-primary/20 focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 transition-all"
                           >
                             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -530,6 +593,32 @@ export function ApproverQueue({
                         )}
                       </td>
                     </tr>
+                    {expandedSubmissionId === sub.id && (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-4 bg-surface-muted/40 border-t border-border-default">
+                          <div className="space-y-2">
+                            <DocumentPreview
+                              fileUrl={expandedUrl}
+                              isLoadingFile={isExpandedLoading}
+                              error={expandedError}
+                              title={sub.requirements?.name || 'Requirement Document'}
+                              className="w-full h-[420px] bg-surface-muted p-1 sm:p-2 overflow-hidden flex items-center justify-center relative rounded-lg"
+                            />
+                            <div className="flex justify-end">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => openViewerModal(sub)}
+                                className="text-brand-primary/80 hover:text-brand-primary hover:underline font-medium text-xs"
+                              >
+                                Expand full screen
+                              </Button>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    </React.Fragment>
                   );
                 })}
               </tbody>
@@ -542,7 +631,7 @@ export function ApproverQueue({
       <Dialog open={!!selectedSub && modalType === 'approve'} onOpenChange={(open) => !open && closeModal()}>
         <DialogContent>
           <DialogHeader>
-            <div className="flex items-center gap-2 text-emerald-700">
+            <div className="flex items-center gap-2 text-status-approved-text">
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
@@ -577,12 +666,12 @@ export function ApproverQueue({
                     />
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center gap-1.5 text-center py-3 text-xs text-amber-700 bg-amber-50 rounded-lg p-2">
+                  <div className="flex items-center justify-center gap-1.5 text-center py-3 text-xs text-status-in-review-text bg-status-in-review/10 rounded-lg p-2">
                     <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                     <span>No signature enrolled.</span>
-                    <Link href="/approver/signature" className="font-bold underline text-amber-900">
+                    <Link href="/approver/signature" className="font-bold underline text-status-in-review-text">
                       Enroll signature first
                     </Link>
                   </div>
@@ -592,7 +681,7 @@ export function ApproverQueue({
           )}
 
           {actionError && (
-            <div role="alert" className="rounded-lg bg-rose-50 p-3 text-xs text-rose-800 border border-rose-200">
+            <div role="alert" className="rounded-lg bg-status-returned/10 p-3 text-xs text-status-returned-text border border-status-returned/30">
               {actionError}
             </div>
           )}
@@ -624,7 +713,7 @@ export function ApproverQueue({
           </DialogHeader>
 
           {actionError && (
-            <div role="alert" className="rounded-lg bg-rose-50 p-3 text-xs text-rose-800 border border-rose-200">
+            <div role="alert" className="rounded-lg bg-status-returned/10 p-3 text-xs text-status-returned-text border border-status-returned/30">
               {actionError}
             </div>
           )}
@@ -674,7 +763,7 @@ export function ApproverQueue({
           </DialogHeader>
 
           {actionError && (
-            <div role="alert" className="rounded-lg bg-rose-50 p-3 text-xs text-rose-800 border border-rose-200">
+            <div role="alert" className="rounded-lg bg-status-returned/10 p-3 text-xs text-status-returned-text border border-status-returned/30">
               {actionError}
             </div>
           )}
@@ -699,7 +788,7 @@ export function ApproverQueue({
                   ))}
               </select>
               {approversList.filter((a) => a.email !== approverEmail).length === 0 && (
-                <p className="text-[11px] text-amber-600 mt-1">
+                <p className="text-[11px] text-status-in-review-text mt-1">
                   No other approver accounts found. Add another approver in Admin &gt; Users.
                 </p>
               )}

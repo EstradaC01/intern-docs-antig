@@ -104,7 +104,7 @@ export function ConfirmAction({
         )}
 
         {error && (
-          <div role="alert" className="rounded-lg bg-rose-50 p-3 text-xs text-rose-800 border border-rose-200">
+          <div role="alert" className="rounded-lg bg-status-returned/10 p-3 text-xs text-status-returned-text border border-status-returned/30">
             {error}
           </div>
         )}

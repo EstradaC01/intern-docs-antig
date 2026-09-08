@@ -3,6 +3,45 @@
 Running log of decisions made after the Week 8 handover (see `08-implementation-plan.md`),
 for whoever picks this up next. Newest entries first.
 
+## 2026-09-08 — Fixed three FR-19 digest defects
+
+Found in `lib/jobs/daily-digest.ts` via an internal defect report (bugs #1-3 below map to
+its numbering):
+
+1. **Admin escalation fired at the wrong threshold.** PRD FR-19 says the admin is copied
+   on anything past **5 working days**, flat. The code computed `waitingDays > sla + 5`,
+   so with the default `sla = 2` the real threshold was 7, not 5 -- items sat 2 extra
+   working days with no admin visibility. Fixed to `waitingDays > 5`, independent of the
+   step's own SLA.
+
+2. **The SLA clock reset on unrelated edits.** `waitingDays` was measured from
+   `submissions.updated_at`, which bumps on *any* write to the row -- confirmed this
+   happens on `reassignSubmissionStep()` (`lib/data/submissions.ts`), which updates
+   `current_holder_id` but not `current_step`. A stalled item that got reassigned
+   silently dropped out of the digest and restarted its wait. Root-cause fix: added a
+   dedicated `current_step_entered_at` column (`20240101000023_add_current_step_entered_at.sql`,
+   backfilled from `updated_at` for existing rows) that is set only at the three places
+   that actually change `current_step` -- initial submit, resubmit-after-return, and
+   step-advance on approval (`lib/data/submissions.ts:554,572,757,982`) -- and left
+   untouched by reassignment or any other metadata-only write. The digest now reads
+   `current_step_entered_at` (falling back to `created_at` for any row where it's null).
+
+3. **Escalation was skipped by the dedup guard.** `if (sentToday.has(sub.id)) continue;`
+   sat above the admin-escalation check, so once an item's daily approver reminder had
+   gone out, its admin escalation for that same day was silently dropped too. "Max 1
+   reminder per item per day" was meant to throttle the approver digest, not suppress
+   admin escalation. Reordered so the escalation check runs first and the dedup guard
+   only gates the approver-reminder/notification-insert block below it.
+
+Covered by `__tests__/daily-digest.test.ts` (5 tests) -- verified each one actually fails
+against the pre-fix code before restoring the fix, not just that it passes now.
+
+**Note for whoever deploys this:** the `current_step_entered_at` backfill uses
+`updated_at` as a best-effort baseline, which will be wrong for any currently-IN_REVIEW
+submission that was reassigned or otherwise edited after entering its current step --
+same inaccuracy the pre-fix code had for those rows, not a regression. It self-corrects
+the next time each submission's step advances.
+
 ## 2026-08-28 — Shrunk the composited signature stamp
 
 `createRequirement()` hardcoded every new requirement's `signature_config` to a

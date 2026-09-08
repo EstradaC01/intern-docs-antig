@@ -29,9 +29,10 @@ export async function runDailyDigest() {
       updated_at,
       created_at,
       current_step,
+      current_step_entered_at,
       current_holder_id,
       intern_id,
-      requirements(id, name, routing_templates(sla_days)),
+      requirements(id, name, custom_reminder_days, routing_templates(sla_days)),
       users!submissions_intern_id_fkey(email)
     `)
     .eq('state', 'IN_REVIEW');
@@ -60,28 +61,36 @@ export async function runDailyDigest() {
   const notificationsToInsert: Record<string, unknown>[] = [];
 
   for (const sub of submissions) {
-    const lastUpdate = new Date(sub.updated_at || sub.created_at);
-    const waitingDays = getWorkingDays(lastUpdate, now);
-    
-    // Default SLA is 2 days if not specified in routing template
+    // FR-19 SLA clock: measured from when the item entered its current step, not from
+    // the last row write -- `updated_at` also bumps on unrelated edits (e.g. REASSIGN).
+    const stepEnteredAt = new Date(sub.current_step_entered_at || sub.created_at);
+    const waitingDays = getWorkingDays(stepEnteredAt, now);
+
+    // Default SLA is 2 days if not specified in routing template. A requirement's own
+    // custom_reminder_days, when set, overrides the shared routing_template's sla_days --
+    // FR-19's approver-reminder threshold only, not the flat 5-day admin escalation above.
     // @ts-expect-error nested field mapping
-    const sla = sub.requirements?.routing_templates?.sla_days || 2;
+    const sla = sub.requirements?.custom_reminder_days ?? sub.requirements?.routing_templates?.sla_days ?? 2;
 
     if (waitingDays > sla) {
-      if (sentToday.has(sub.id)) continue;
-
-      if (sub.current_holder_id) {
-        const count = approverReminders.get(sub.current_holder_id) || 0;
-        approverReminders.set(sub.current_holder_id, count + 1);
-      }
-      
-      if (waitingDays > sla + 5) {
+      // PRD FR-19: admin gets copied on anything past 5 working days, independent of
+      // the step's own SLA target.
+      if (waitingDays > 5) {
         adminEscalations.push({
           // @ts-expect-error nested field mapping
           internEmail: sub.users?.email || 'Unknown',
           // @ts-expect-error nested field mapping
           reqName: sub.requirements?.name || 'Document',
         });
+      }
+
+      // "Max 1 reminder per item per day" throttles the approver digest only -- it must
+      // not suppress the admin escalation above.
+      if (sentToday.has(sub.id)) continue;
+
+      if (sub.current_holder_id) {
+        const count = approverReminders.get(sub.current_holder_id) || 0;
+        approverReminders.set(sub.current_holder_id, count + 1);
       }
 
       notificationsToInsert.push({

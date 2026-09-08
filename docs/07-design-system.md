@@ -27,6 +27,29 @@ Contrast ratios verified against white (#FFFFFF): primary #1B3251 = 10.07:1, acc
   --status-overdue: #DC2626;
   --status-deleted: #9CA3AF;
 
+  /* Readable text over a status tint (e.g. bg-status-approved at 10% opacity, border at 30%) --
+     the 700/800 shade of the same hue. Added 2026-09-08 (docs/18-brand-palette-audit-handoff.md)
+     once the audit found the same "what color is the label" gap repeating at ~10 call sites
+     beyond StatusBadge.tsx's already-documented one. */
+  --status-not-started-text: #334155;
+  --status-draft-text: #334155;
+  --status-submitted-text: #1D4ED8;
+  --status-in-review-text: #92400E;
+  --status-returned-text: #B91C1C;
+  --status-approved-text: #15803D;
+  --status-overdue-text: #991B1B;
+  --status-deleted-text: #475569;
+
+  /* Role-differentiation badges (UserManagementTable, AdminUsersTable) -- a separate namespace
+     from --status-*, which carries workflow-state meaning, not role identity. `intern` reuses
+     --surface-muted/--text-muted directly (unprivileged default, no color-coding). */
+  --role-system-admin-bg: #F3E8FF;
+  --role-system-admin-text: #6B21A8;
+  --role-admin-bg: #DBEAFE;
+  --role-admin-text: #1E40AF;
+  --role-approver-bg: #FEF3C7;
+  --role-approver-text: #92400E;
+
   --surface-bg: #FFFFFF;
   --surface-muted: #F8FAFC;
   --surface-hover: #F1F5F9;      /* row/item hover state — do not reach for raw slate-50/100 */
@@ -39,6 +62,8 @@ Contrast ratios verified against white (#FFFFFF): primary #1B3251 = 10.07:1, acc
 ```
 
 **Status:** Brand tokens are confirmed and applied in `src/app/globals.css`. `--brand-muted` was referenced by `RoleSidebar`'s active-nav state before it existed as a token (a silent no-op bug); it's now defined, and the active nav item also gets a 3px `--brand-accent` left border so the accent color has real presence in the app shell, not just on the login page.
+
+Secondary text on a `--brand-primary` background (not tinted, the solid navy itself) uses the `text-white/70` opacity pattern rather than a dedicated token — matches the `bg-white/10`/`border-white/15` convention already used for chrome on that same background (see `intern/layout.tsx`'s sticky header).
 
 Any color introduced for a status/feedback purpose (warnings, success confirmations, danger banners) should reuse the `--status-*` tokens above rather than inventing a new Tailwind shade inline — several components had drifted into ad hoc `emerald-950`/`amber-900`/`rose-800`-style one-offs; new work should not add to that list.
 

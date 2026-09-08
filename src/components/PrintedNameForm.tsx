@@ -49,12 +49,12 @@ export function PrintedNameForm({ currentName, onSaveNameAction }: PrintedNameFo
       </div>
 
       {errorMsg && (
-        <div role="alert" className="mb-4 rounded-lg bg-rose-50 p-3 text-xs text-rose-800 border border-rose-200">
+        <div role="alert" className="mb-4 rounded-lg bg-status-returned/10 p-3 text-xs text-status-returned-text border border-status-returned/30">
           {errorMsg}
         </div>
       )}
       {successMsg && (
-        <div role="status" className="mb-4 rounded-lg bg-emerald-50 p-3 text-xs text-emerald-800 border border-emerald-200">
+        <div role="status" className="mb-4 rounded-lg bg-status-approved/10 p-3 text-xs text-status-approved-text border border-status-approved/30">
           {successMsg}
         </div>
       )}

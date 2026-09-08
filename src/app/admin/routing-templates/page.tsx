@@ -1,4 +1,4 @@
-import { getRoutingTemplates, createRoutingTemplate } from '@lib/data/routing';
+import { getRoutingTemplates, createRoutingTemplate, deleteRoutingTemplate } from '@lib/data/routing';
 import { AdminRoutingTemplateManager } from '@/components/AdminRoutingTemplateManager';
 import type { CreateRoutingTemplateInput } from '@/components/AdminRequirementManager';
 
@@ -16,11 +16,23 @@ export default async function RoutingTemplatesPage() {
     }
   }
 
+  async function handleDeleteTpl(templateId: string) {
+    'use server';
+    try {
+      await deleteRoutingTemplate(templateId);
+      return { success: true };
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to delete template';
+      return { error: msg };
+    }
+  }
+
   return (
     <div className="p-6 md:p-10 space-y-8">
       <AdminRoutingTemplateManager
         routingTemplates={routingTemplates}
         onCreateTemplate={handleCreateTpl}
+        onDeleteTemplate={handleDeleteTpl}
       />
     </div>
   );

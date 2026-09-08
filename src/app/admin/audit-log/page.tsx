@@ -42,7 +42,7 @@ export default async function AuditLogPage() {
       </div>
       
       {error ? (
-        <div className="rounded-xl bg-rose-50 p-6 text-sm text-rose-800 border border-rose-200">
+        <div className="rounded-xl bg-status-returned/10 p-6 text-sm text-status-returned-text border border-status-returned/30">
           Failed to load audit logs: {error.message}
         </div>
       ) : (

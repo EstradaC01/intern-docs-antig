@@ -72,7 +72,7 @@ export function AdminUsersTable({ users, onApproveAction }: AdminUsersTableProps
         <div>
           <h2 className="font-bold text-lg text-text-primary flex items-center gap-2">
             <span>Cohort Interns</span>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-surface-muted text-text-muted">
               {filteredUsers.length} of {users.length}
             </span>
           </h2>
@@ -82,7 +82,7 @@ export function AdminUsersTable({ users, onApproveAction }: AdminUsersTableProps
         </div>
 
         {statusMessage && (
-          <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-800 bg-status-approved/10 px-3 py-1.5 rounded-xl border border-status-approved/30 animate-in fade-in">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-status-approved-text bg-status-approved/10 px-3 py-1.5 rounded-xl border border-status-approved/30 animate-in fade-in">
             <svg className="h-3.5 w-3.5 text-status-approved shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -202,7 +202,7 @@ export function AdminUsersTable({ users, onApproveAction }: AdminUsersTableProps
                   <span
                     className={`inline-block px-2.5 py-0.5 rounded-full font-semibold text-[10px] uppercase tracking-wider ${
                       u.status === 'pending'
-                        ? 'bg-amber-100 text-amber-800'
+                        ? 'bg-status-in-review/20 text-status-in-review-text'
                         : 'bg-status-approved/10 text-status-approved'
                     }`}
                   >
@@ -217,12 +217,12 @@ export function AdminUsersTable({ users, onApproveAction }: AdminUsersTableProps
                         size="sm"
                         disabled={approvingId === u.id}
                         onClick={() => handleApprove(u)}
-                        className="rounded-xl px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs"
+                        className="rounded-xl px-3 py-1.5 text-xs font-semibold bg-status-approved hover:bg-status-approved-text text-white shadow-2xs"
                       >
                         {approvingId === u.id ? 'Admitting…' : 'Approve'}
                       </Button>
                       {rowError[u.id] && (
-                        <span role="alert" className="text-[10px] text-rose-700">{rowError[u.id]}</span>
+                        <span role="alert" className="text-[10px] text-status-returned-text">{rowError[u.id]}</span>
                       )}
                     </div>
                   ) : (

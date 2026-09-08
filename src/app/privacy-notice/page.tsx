@@ -122,7 +122,7 @@ export default async function PrivacyNoticePage({
 
         <div className="p-6 border-t border-border-default">
           {error && (
-            <div role="alert" className="mb-4 rounded bg-red-50 p-3 text-sm text-red-800 border border-red-200">
+            <div role="alert" className="mb-4 rounded bg-status-returned/10 p-3 text-sm text-status-returned-text border border-status-returned/30">
               {error}
             </div>
           )}

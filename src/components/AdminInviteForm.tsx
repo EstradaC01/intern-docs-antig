@@ -107,14 +107,14 @@ export function AdminInviteForm({
       )}
 
       {errorMsg && (
-        <div role="alert" className="rounded-xl bg-rose-50 p-3 text-xs text-rose-800 border border-rose-200">
+        <div role="alert" className="rounded-xl bg-status-returned/10 p-3 text-xs text-status-returned-text border border-status-returned/30">
           {errorMsg}
         </div>
       )}
 
       {successInfo && (
-        <div role="status" className="rounded-xl bg-emerald-50 p-4 border border-emerald-200 space-y-2.5">
-          <div className="flex items-center gap-1.5 text-emerald-800 font-bold text-xs">
+        <div role="status" className="rounded-xl bg-status-approved/10 p-4 border border-status-approved/30 space-y-2.5">
+          <div className="flex items-center gap-1.5 text-status-approved-text font-bold text-xs">
             <svg className="h-3.5 w-3.5 shrink-0 text-status-approved" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -123,7 +123,7 @@ export function AdminInviteForm({
 
           {successInfo.inviteLink && (
             <div className="space-y-1.5 pt-1">
-              <span className="text-[11px] text-emerald-900 font-medium block">
+              <span className="text-[11px] text-status-approved-text font-medium block">
                 Direct Setup Link (Expires in 7 days):
               </span>
               <div className="flex items-center gap-2">
@@ -131,7 +131,7 @@ export function AdminInviteForm({
                   type="text"
                   readOnly
                   value={successInfo.inviteLink}
-                  className="flex-1 bg-white border border-emerald-300 rounded-lg p-2 text-xs font-mono text-emerald-950 select-all outline-none"
+                  className="flex-1 bg-white border border-status-approved/40 rounded-lg p-2 text-xs font-mono text-status-approved-text select-all outline-none"
                 />
                 <Button type="button" size="sm" variant="success" onClick={handleCopyLink} className="shrink-0">
                   {copied ? 'Copied!' : 'Copy Link'}

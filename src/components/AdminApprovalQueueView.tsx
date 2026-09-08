@@ -44,9 +44,7 @@ export function AdminApprovalQueueView({
     (item) => item.current_step === 1 || (item.totalSteps === 1 && item.current_step === 1)
   );
 
-  // Default to step1 if no step2 items are pending, otherwise step2
-  const initialTab = step2Items.length > 0 ? 'final' : step1Items.length > 0 ? 'step1' : 'final';
-  const [activeTab, setActiveTab] = useState<'final' | 'step1' | 'all'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'final' | 'step1' | 'all'>('all');
 
   const displayedItems =
     activeTab === 'final' ? step2Items : activeTab === 'step1' ? step1Items : allItems;

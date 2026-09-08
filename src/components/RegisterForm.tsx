@@ -120,7 +120,7 @@ export function RegisterForm({ error: initialError, onRegisterAction }: Register
         {clientError && (
           <div
             role="alert"
-            className="rounded-xl bg-rose-50 px-4 py-3 text-xs text-rose-800 border border-rose-200"
+            className="rounded-xl bg-status-returned/10 px-4 py-3 text-xs text-status-returned-text border border-status-returned/30"
           >
             {clientError}
           </div>
@@ -129,7 +129,7 @@ export function RegisterForm({ error: initialError, onRegisterAction }: Register
         {/* Full Name */}
         <div>
           <label htmlFor="register-name" className="block text-xs font-semibold text-text-primary mb-1">
-            Full Name <span className="text-rose-500">*</span>
+            Full Name <span className="text-status-returned">*</span>
           </label>
           <input
             id="register-name"
@@ -139,14 +139,14 @@ export function RegisterForm({ error: initialError, onRegisterAction }: Register
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             placeholder="e.g. Juan dela Cruz"
-            className="w-full rounded-xl border border-border-default bg-white px-3.5 py-2.5 text-xs text-text-primary placeholder:text-slate-400 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 focus:outline-none transition-all"
+            className="w-full rounded-xl border border-border-default bg-white px-3.5 py-2.5 text-xs text-text-primary placeholder:text-text-muted focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 focus:outline-none transition-all"
           />
         </div>
 
         {/* Email */}
         <div>
           <label htmlFor="register-email" className="block text-xs font-semibold text-text-primary mb-1">
-            Email Address <span className="text-rose-500">*</span>
+            Email Address <span className="text-status-returned">*</span>
           </label>
           <input
             id="register-email"
@@ -157,7 +157,7 @@ export function RegisterForm({ error: initialError, onRegisterAction }: Register
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
             placeholder="intern@university.edu.ph"
-            className="w-full rounded-xl border border-border-default bg-white px-3.5 py-2.5 text-xs text-text-primary placeholder:text-slate-400 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 focus:outline-none transition-all"
+            className="w-full rounded-xl border border-border-default bg-white px-3.5 py-2.5 text-xs text-text-primary placeholder:text-text-muted focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 focus:outline-none transition-all"
           />
         </div>
 
@@ -165,7 +165,7 @@ export function RegisterForm({ error: initialError, onRegisterAction }: Register
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label htmlFor="register-password" className="block text-xs font-semibold text-text-primary mb-1">
-              Password <span className="text-rose-500">*</span>
+              Password <span className="text-status-returned">*</span>
             </label>
             <div className="relative">
               <input
@@ -178,12 +178,12 @@ export function RegisterForm({ error: initialError, onRegisterAction }: Register
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="new-password"
                 placeholder="Min 12 characters"
-                className="w-full rounded-xl border border-border-default bg-white px-3.5 py-2.5 pr-9 text-xs text-text-primary placeholder:text-slate-400 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 focus:outline-none transition-all"
+                className="w-full rounded-xl border border-border-default bg-white px-3.5 py-2.5 pr-9 text-xs text-text-primary placeholder:text-text-muted focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 focus:outline-none transition-all"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-text-primary focus:outline-none"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary focus:outline-none"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? (
@@ -202,7 +202,7 @@ export function RegisterForm({ error: initialError, onRegisterAction }: Register
 
           <div>
             <label htmlFor="register-confirm-password" className="block text-xs font-semibold text-text-primary mb-1">
-              Confirm Password <span className="text-rose-500">*</span>
+              Confirm Password <span className="text-status-returned">*</span>
             </label>
             <div className="relative">
               <input
@@ -215,12 +215,12 @@ export function RegisterForm({ error: initialError, onRegisterAction }: Register
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 autoComplete="new-password"
                 placeholder="Re-enter password"
-                className="w-full rounded-xl border border-border-default bg-white px-3.5 py-2.5 pr-9 text-xs text-text-primary placeholder:text-slate-400 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 focus:outline-none transition-all"
+                className="w-full rounded-xl border border-border-default bg-white px-3.5 py-2.5 pr-9 text-xs text-text-primary placeholder:text-text-muted focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 focus:outline-none transition-all"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-text-primary focus:outline-none"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary focus:outline-none"
                 aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
               >
                 {showConfirmPassword ? (
@@ -242,7 +242,7 @@ export function RegisterForm({ error: initialError, onRegisterAction }: Register
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="sm:col-span-2">
             <label htmlFor="register-school" className="block text-xs font-semibold text-text-primary mb-1">
-              School / University <span className="text-rose-500">*</span>
+              School / University <span className="text-status-returned">*</span>
             </label>
             <input
               id="register-school"
@@ -253,13 +253,13 @@ export function RegisterForm({ error: initialError, onRegisterAction }: Register
               value={school}
               onChange={(e) => setSchool(e.target.value)}
               placeholder="e.g. University of the Philippines"
-              className="w-full rounded-xl border border-border-default bg-white px-3.5 py-2.5 text-xs text-text-primary placeholder:text-slate-400 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 focus:outline-none transition-all"
+              className="w-full rounded-xl border border-border-default bg-white px-3.5 py-2.5 text-xs text-text-primary placeholder:text-text-muted focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 focus:outline-none transition-all"
             />
           </div>
 
           <div>
             <label htmlFor="register-batch" className="block text-xs font-semibold text-text-primary mb-1">
-              Batch Year <span className="text-rose-500">*</span>
+              Batch Year <span className="text-status-returned">*</span>
             </label>
             <input
               id="register-batch"
@@ -272,7 +272,7 @@ export function RegisterForm({ error: initialError, onRegisterAction }: Register
               value={batch}
               onChange={(e) => setBatch(e.target.value.replace(/\D/g, '').slice(0, 4))}
               placeholder="e.g. 2026"
-              className="w-full rounded-xl border border-border-default bg-white px-3.5 py-2.5 text-xs text-text-primary placeholder:text-slate-400 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 focus:outline-none transition-all"
+              className="w-full rounded-xl border border-border-default bg-white px-3.5 py-2.5 text-xs text-text-primary placeholder:text-text-muted focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 focus:outline-none transition-all"
             />
           </div>
         </div>
@@ -282,7 +282,7 @@ export function RegisterForm({ error: initialError, onRegisterAction }: Register
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label htmlFor="register-start" className="block text-xs font-semibold text-text-primary mb-1">
-              Start of OJT <span className="text-rose-500">*</span>
+              Start of OJT <span className="text-status-returned">*</span>
             </label>
             <input
               id="register-start"
@@ -291,13 +291,13 @@ export function RegisterForm({ error: initialError, onRegisterAction }: Register
               required
               value={start}
               onChange={(e) => setStart(e.target.value)}
-              className="w-full rounded-xl border border-border-default bg-white px-3.5 py-2.5 text-xs text-text-primary placeholder:text-slate-400 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 focus:outline-none transition-all"
+              className="w-full rounded-xl border border-border-default bg-white px-3.5 py-2.5 text-xs text-text-primary placeholder:text-text-muted focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 focus:outline-none transition-all"
             />
           </div>
 
           <div>
             <label htmlFor="register-end" className="block text-xs font-semibold text-text-primary mb-1">
-              End of OJT <span className="text-rose-500">*</span>
+              End of OJT <span className="text-status-returned">*</span>
             </label>
             <input
               id="register-end"
@@ -306,7 +306,7 @@ export function RegisterForm({ error: initialError, onRegisterAction }: Register
               required
               value={end}
               onChange={(e) => setEnd(e.target.value)}
-              className="w-full rounded-xl border border-border-default bg-white px-3.5 py-2.5 text-xs text-text-primary placeholder:text-slate-400 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 focus:outline-none transition-all"
+              className="w-full rounded-xl border border-border-default bg-white px-3.5 py-2.5 text-xs text-text-primary placeholder:text-text-muted focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 focus:outline-none transition-all"
             />
           </div>
         </div>
@@ -344,21 +344,21 @@ export function RegisterForm({ error: initialError, onRegisterAction }: Register
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200"
         >
           <div className="w-full max-w-md rounded-2xl bg-white p-6 md:p-8 shadow-2xl border border-border-default text-center space-y-5 animate-in zoom-in-95 duration-200">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 border border-amber-200">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-status-in-review/10 text-status-in-review-text border border-status-in-review/30">
               <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
 
             <div className="space-y-2">
-              <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800">
+              <span className="inline-flex items-center rounded-full bg-status-in-review/20 px-2.5 py-0.5 text-[11px] font-semibold text-status-in-review-text">
                 Pending Approval
               </span>
               <h3 className="text-xl font-bold text-text-primary">Registration Submitted!</h3>
               <p className="text-xs text-text-muted leading-relaxed max-w-sm mx-auto">
                 Thank you for registering, <strong className="text-text-primary">{submittedInfo.name}</strong>. Your account has been submitted and is currently pending administrator approval before you can join the cohort.
               </p>
-              <div className="rounded-xl bg-slate-50 p-3 text-[11px] text-text-muted text-left border border-slate-200 space-y-1">
+              <div className="rounded-xl bg-surface-muted p-3 text-[11px] text-text-muted text-left border border-border-default space-y-1">
                 <p>
                   <strong>Notice:</strong> Login is temporarily locked while under review.
                 </p>

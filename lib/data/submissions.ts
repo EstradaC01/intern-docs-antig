@@ -116,6 +116,9 @@ export interface SubmissionWithRelations {
   intern_id: string;
   state: SubmissionState;
   current_step: number;
+  /** When the submission entered `current_step` -- the FR-19 digest SLA clock. Distinct
+   *  from `updated_at`, which bumps on any write (e.g. a reassignment). */
+  current_step_entered_at: string | null;
   current_holder_id: string | null;
   due_date: string | null;
   created_at: string;
@@ -552,6 +555,7 @@ export async function uploadSubmission(formData: FormData) {
         requirement_id: requirementId,
         state: SubmissionState.IN_REVIEW, // Advances to IN_REVIEW at step 1
         current_step: 1,
+        current_step_entered_at: new Date().toISOString(),
         current_holder_id: step1HolderId,
         due_date: dueDate ? dueDate.toISOString() : null,
         routing_snapshot: typedReq.routing_templates || null, // FR-8: freeze template at submission time
@@ -570,6 +574,7 @@ export async function uploadSubmission(formData: FormData) {
       .update({
         state: SubmissionState.IN_REVIEW,
         current_step: 1,
+        current_step_entered_at: new Date().toISOString(),
         current_holder_id: step1HolderId,
         due_date: dueDate ? dueDate.toISOString() : null,
         updated_at: new Date().toISOString(),
@@ -755,6 +760,7 @@ export async function resubmitSubmission(formData: FormData) {
     .update({
       state: SubmissionState.IN_REVIEW,
       current_step: 1,
+      current_step_entered_at: new Date().toISOString(),
       current_holder_id: step1HolderId,
       updated_at: new Date().toISOString(),
     })
@@ -980,6 +986,7 @@ export async function approveSubmissionSigned(submissionId: string) {
       .update({
         state: nextState,
         current_step: nextStepNumber,
+        current_step_entered_at: approvalDate.toISOString(),
         current_holder_id: nextHolderId,
         updated_at: approvalDate.toISOString(),
       })
@@ -1321,6 +1328,62 @@ export async function returnSubmission(submissionId: string, comment: string) {
 }
 
 /**
+ * Downloads a file from the `submissions` bucket (authenticated user client, falling
+ * back to the admin client) and verifies its SHA-256 against the recorded hash. Logs
+ * TAMPER_ALERT_HASH_MISMATCH and throws on mismatch. Shared by every caller that needs
+ * verified file bytes -- single-document signed-URL issuance
+ * (getSubmissionSignedDownloadUrl below) and the bulk approved-documents export.
+ */
+export async function downloadAndVerifyFile(
+  filePath: string,
+  expectedHash: string,
+  submissionId: string
+): Promise<{ buffer: Buffer; hash: string }> {
+  const supabase = await createClient();
+  const adminClient = createAdminClient();
+
+  let fileBlob: Blob | null = null;
+  const { data: userBlob, error: userDownloadErr } = await supabase.storage
+    .from('submissions')
+    .download(filePath);
+
+  if (userBlob) {
+    fileBlob = userBlob;
+  } else {
+    const { data: adminBlob, error: adminErr } = await adminClient.storage
+      .from('submissions')
+      .download(filePath);
+
+    if (adminBlob) {
+      fileBlob = adminBlob;
+    } else {
+      throw new Error(`Failed to fetch file from storage: ${userDownloadErr?.message || adminErr?.message || 'Object not found'}`);
+    }
+  }
+
+  const fileBuffer = Buffer.from(await fileBlob.arrayBuffer());
+  const actualHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+
+  const hashMatches = actualHash.toLowerCase() === expectedHash.toLowerCase();
+  if (!hashMatches) {
+    const reqHeaders = await headers();
+    const ip = reqHeaders.get('x-forwarded-for') || 'unknown';
+
+    await adminClient.from('audit_log').insert({
+      actor_id: null,
+      action: 'TAMPER_ALERT_HASH_MISMATCH',
+      target_id: submissionId,
+      target_type: 'submissions',
+      source_ip: ip,
+    });
+
+    throw new Error('Integrity Warning: Document SHA-256 hash does not match recorded approval checksum.');
+  }
+
+  return { buffer: fileBuffer, hash: actualHash };
+}
+
+/**
  * Generate 5-minute signed URL for document download after server permission & SHA-256 verification.
  * PRD FR-14 & FR-25: Recomputes SHA-256 and verifies document integrity.
  */
@@ -1347,49 +1410,10 @@ export async function getSubmissionSignedDownloadUrl(submissionId: string, versi
     ? latestApproval.file_hash
     : targetVersion.file_hash;
 
+  const { hash: actualHash } = await downloadAndVerifyFile(filePathToDownload, expectedHash, submissionId);
+
   const supabase = await createClient();
   const adminClient = createAdminClient();
-
-  // 1. Download file bytes to verify cryptographic integrity (SHA-256)
-  // Try authenticated user client first, fallback to admin client
-  let fileBlob: Blob | null = null;
-  const { data: userBlob, error: userDownloadErr } = await supabase.storage
-    .from('submissions')
-    .download(filePathToDownload);
-
-  if (userBlob) {
-    fileBlob = userBlob;
-  } else {
-    const { data: adminBlob, error: adminErr } = await adminClient.storage
-      .from('submissions')
-      .download(filePathToDownload);
-
-    if (adminBlob) {
-      fileBlob = adminBlob;
-    } else {
-      throw new Error(`Failed to fetch file from storage: ${userDownloadErr?.message || adminErr?.message || 'Object not found'}`);
-    }
-  }
-
-  const fileBuffer = Buffer.from(await fileBlob.arrayBuffer());
-  const actualHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
-
-  // Verify hash match
-  const hashMatches = actualHash.toLowerCase() === expectedHash.toLowerCase();
-  if (!hashMatches) {
-    const reqHeaders = await headers();
-    const ip = reqHeaders.get('x-forwarded-for') || 'unknown';
-
-    await adminClient.from('audit_log').insert({
-      actor_id: null,
-      action: 'TAMPER_ALERT_HASH_MISMATCH',
-      target_id: submissionId,
-      target_type: 'submissions',
-      source_ip: ip,
-    });
-
-    throw new Error('Integrity Warning: Document SHA-256 hash does not match recorded approval checksum.');
-  }
 
   // 2. Generate 5-minute signed URL (try supabase client, fallback to admin)
   let signedUrl: string | null = null;
