@@ -13,6 +13,7 @@ export interface CreateRequirementInput {
   due_date_type: 'fixed' | 'relative';
   due_date_value: string;
   routing_template_id?: string | null;
+  custom_reminder_days: number | null;
 }
 
 export interface CreateRoutingTemplateInput {
@@ -72,6 +73,7 @@ export function AdminRequirementManager({
   const [dueDateType, setDueDateType] = useState<'fixed' | 'relative'>('relative');
   const [dueDateValue, setDueDateValue] = useState('30');
   const [routingTemplateId, setRoutingTemplateId] = useState('');
+  const [customReminderDays, setCustomReminderDays] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -99,6 +101,7 @@ export function AdminRequirementManager({
         due_date_type: dueDateType,
         due_date_value: dueDateValue,
         routing_template_id: routingTemplateId || null,
+        custom_reminder_days: customReminderDays.trim() === '' ? null : Number(customReminderDays),
       });
       if (res.error) throw new Error(res.error);
       setShowReqModal(false);
@@ -290,7 +293,7 @@ export function AdminRequirementManager({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block font-semibold text-text-primary mb-1">Routing Template</label>
                   <select
@@ -314,6 +317,24 @@ export function AdminRequirementManager({
                     onChange={(e) => setMaxSizeMb(Number(e.target.value))}
                     className="w-full rounded-xl border border-border-default p-2.5 text-text-primary focus:border-brand-primary outline-none"
                   />
+                </div>
+                <div>
+                  <label className="block font-semibold text-text-primary mb-1">
+                    Custom Reminder Threshold (days)
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={30}
+                    value={customReminderDays}
+                    onChange={(e) => setCustomReminderDays(e.target.value)}
+                    placeholder="Uses template default"
+                    className="w-full rounded-xl border border-border-default p-2.5 text-text-primary focus:border-brand-primary outline-none"
+                  />
+                  <p className="text-[10px] text-text-muted mt-1">
+                    Optional. Overrides the routing template&apos;s SLA for the approver
+                    reminder digest only. Leave blank to use the template default.
+                  </p>
                 </div>
               </div>
 
