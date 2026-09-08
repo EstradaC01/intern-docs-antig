@@ -52,6 +52,8 @@ export function InternChecklist({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [timelineSubId, setTimelineSubId] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [isExportingApproved, setIsExportingApproved] = useState(false);
+  const [exportApprovedError, setExportApprovedError] = useState<string | null>(null);
   const [filterReq, setFilterReq] = useState<string>('ALL');
   const [filterState, setFilterState] = useState<string>('ALL');
 
@@ -211,6 +213,34 @@ export function InternChecklist({
     }
   };
 
+  const handleExportApproved = async () => {
+    setIsExportingApproved(true);
+    setExportApprovedError(null);
+    try {
+      const res = await fetch('/api/intern/export-approved');
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || 'Export failed');
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `approved_documents_${new Date().toISOString().split('T')[0]}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Export failed';
+      setExportApprovedError(msg);
+    } finally {
+      setIsExportingApproved(false);
+    }
+  };
+
+  const hasApprovedDocuments = items.some((i) => i.state === 'APPROVED' || i.state === 'COMPLETED');
+
   return (
     <div className="w-full space-y-6">
       {downloadError && (
@@ -238,11 +268,38 @@ export function InternChecklist({
             {internEmail ? `Logged in as ${internEmail}` : 'Track your required submission progress.'}
           </p>
         </div>
-        <ProgressBar
-          completed={items.filter((i) => i.state === 'APPROVED' || i.state === 'COMPLETED').length}
-          total={items.length}
-        />
+        <div className="flex items-center gap-3">
+          {hasApprovedDocuments && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={handleExportApproved}
+              disabled={isExportingApproved}
+              className="border-brand-primary text-brand-primary hover:bg-brand-primary/5 font-semibold"
+            >
+              {isExportingApproved ? 'Preparing…' : 'Download all approved documents'}
+            </Button>
+          )}
+          <ProgressBar
+            completed={items.filter((i) => i.state === 'APPROVED' || i.state === 'COMPLETED').length}
+            total={items.length}
+          />
+        </div>
       </div>
+      {exportApprovedError && (
+        <div role="alert" className="flex items-start justify-between gap-3 rounded-xl bg-rose-50 p-3.5 text-xs text-rose-800 border border-rose-200">
+          <span>{exportApprovedError}</span>
+          <button
+            type="button"
+            onClick={() => setExportApprovedError(null)}
+            aria-label="Dismiss error"
+            className="shrink-0 p-0.5 rounded text-rose-600 hover:text-rose-800"
+          >
+            <XIcon className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 bg-surface-bg p-3.5 rounded-xl border border-border-default shadow-xs">
