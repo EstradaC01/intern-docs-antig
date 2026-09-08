@@ -18,6 +18,7 @@ const requirementSchema = z.object({
     (val) => (typeof val === 'string' && uuidRegex.test(val) ? val : null),
     z.string().uuid().nullable().optional()
   ),
+  custom_reminder_days: z.number().int().min(1).max(30).nullable().optional(),
 });
 
 export async function getRequirements() {
@@ -76,6 +77,7 @@ export async function createRequirement(input: z.infer<typeof requirementSchema>
       due_date_type: parsed.due_date_type,
       due_date_value: parsed.due_date_value,
       routing_template_id: parsed.routing_template_id || null,
+      custom_reminder_days: parsed.custom_reminder_days ?? null,
       version_number: 1,
       signature_config: { page: 'last', x: 380, y: 80, width: 90, height: 34 },
     })
