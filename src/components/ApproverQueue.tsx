@@ -2,9 +2,10 @@
 
 // Force client chunk cache invalidation
 import React, { useState, useMemo } from 'react';
-import { XIcon } from 'lucide-react';
+import { XIcon, ChevronDown, ChevronRight } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 import { DocumentViewerModal } from './DocumentViewerModal';
+import { DocumentPreview } from './DocumentPreview';
 import { RequirementRecord, SubmissionVersionRecord } from '@lib/data/submissions';
 import Link from 'next/link';
 import { SubmissionTimelineModal } from './SubmissionTimelineModal';
@@ -109,6 +110,12 @@ export function ApproverQueue({
   const [activeSigPreview, setActiveSigPreview] = useState(signaturePreviewUrl);
   const [activeHasSig, setActiveHasSig] = useState(hasSignature);
 
+  // Inline expand-in-row preview state (accordion -- one row at a time).
+  const [expandedSubmissionId, setExpandedSubmissionId] = useState<string | null>(null);
+  const [expandedUrl, setExpandedUrl] = useState<string | null>(null);
+  const [isExpandedLoading, setIsExpandedLoading] = useState(false);
+  const [expandedError, setExpandedError] = useState<string | null>(null);
+
   React.useEffect(() => {
     setActiveSigPreview(signaturePreviewUrl);
     setActiveHasSig(hasSignature);
@@ -182,6 +189,35 @@ export function ApproverQueue({
       setViewerError(msg);
     } finally {
       setIsViewerLoading(false);
+    }
+  };
+
+  const toggleExpandRow = async (sub: ApproverQueueItem) => {
+    if (expandedSubmissionId === sub.id) {
+      setExpandedSubmissionId(null);
+      setExpandedUrl(null);
+      setExpandedError(null);
+      return;
+    }
+
+    setExpandedSubmissionId(sub.id);
+    setExpandedUrl(null);
+    setExpandedError(null);
+    setIsExpandedLoading(true);
+
+    try {
+      const res = await onGetDownloadUrlAction(sub.id);
+      if (res.error) throw new Error(res.error);
+      if (res.signedUrl) {
+        setExpandedUrl(res.signedUrl);
+      } else {
+        throw new Error('No document preview link available');
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to load document preview';
+      setExpandedError(msg);
+    } finally {
+      setIsExpandedLoading(false);
     }
   };
 
@@ -423,7 +459,8 @@ export function ApproverQueue({
                   const waitToneClass = waitTimeToneClass(sub.waitingHours, slaDays);
                   const rowEdgeClass = getRowStatusEdgeClass(sub, slaDays);
                   return (
-                    <tr key={sub.id} className="hover:bg-surface-hover transition-colors align-top">
+                    <React.Fragment key={sub.id}>
+                    <tr className="hover:bg-surface-hover transition-colors align-top">
                       <td className={`px-6 py-4 font-medium text-text-primary align-top ${rowEdgeClass}`}>
                         {sub.users?.full_name || sub.users?.email || 'Unknown'}
                         {(sub.users?.school || sub.users?.batch) && (
@@ -458,6 +495,20 @@ export function ApproverQueue({
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right space-x-1.5 whitespace-nowrap align-top">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => toggleExpandRow(sub)}
+                          title={expandedSubmissionId === sub.id ? 'Collapse preview' : 'Expand preview'}
+                          aria-expanded={expandedSubmissionId === sub.id}
+                          className="text-text-muted hover:text-text-primary px-1.5"
+                        >
+                          {expandedSubmissionId === sub.id ? (
+                            <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+                          ) : (
+                            <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+                          )}
+                        </Button>
                         <Button
                           size="sm"
                           variant="ghost"
@@ -530,6 +581,32 @@ export function ApproverQueue({
                         )}
                       </td>
                     </tr>
+                    {expandedSubmissionId === sub.id && (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-4 bg-surface-muted/40 border-t border-border-default">
+                          <div className="space-y-2">
+                            <DocumentPreview
+                              fileUrl={expandedUrl}
+                              isLoadingFile={isExpandedLoading}
+                              error={expandedError}
+                              title={sub.requirements?.name || 'Requirement Document'}
+                              className="w-full h-[420px] bg-slate-100 p-1 sm:p-2 overflow-hidden flex items-center justify-center relative rounded-lg"
+                            />
+                            <div className="flex justify-end">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => openViewerModal(sub)}
+                                className="text-brand-primary/80 hover:text-brand-primary hover:underline font-medium text-xs"
+                              >
+                                Expand full screen
+                              </Button>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    </React.Fragment>
                   );
                 })}
               </tbody>
