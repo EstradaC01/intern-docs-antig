@@ -10,12 +10,12 @@ import {
   CheckCircle2,
   Undo2,
   UserCheck,
-  Download,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { SignaturePad } from '@/components/SignaturePad';
 import { enrollSignatureAction } from '@/app/actions/signatures';
+import { DocumentPreview } from './DocumentPreview';
 
 export interface DocumentViewerModalProps {
   open: boolean;
@@ -94,29 +94,6 @@ export function DocumentViewerModal({
     setCurrentSignaturePreview(signaturePreviewUrl);
     setCurrentHasSignature(hasSignature);
   }, [signaturePreviewUrl, hasSignature]);
-
-  const isImage = Boolean(
-    fileUrl &&
-      (/\.(jpeg|jpg|png|webp|gif)(\?|$)/i.test(fileUrl) ||
-        fileUrl.includes('image/') ||
-        fileUrl.includes('image%2F'))
-  );
-
-  const handleDownloadClick = () => {
-    if (onDownload) {
-      onDownload();
-      return;
-    }
-    if (fileUrl) {
-      const a = document.createElement('a');
-      a.href = fileUrl;
-      a.download = downloadFileName || 'document.pdf';
-      a.target = '_blank';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
-  };
 
   const handleConfirmApprove = async () => {
     if (!onApprove) return;
@@ -220,49 +197,14 @@ export function DocumentViewerModal({
         {/* Modal Main Body */}
         <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden relative">
           {/* Left Canvas: Document Previewer */}
-          <div className="flex-1 h-full min-h-[360px] bg-slate-100 p-1 sm:p-2 overflow-hidden flex items-center justify-center relative">
-            {isLoadingFile ? (
-              <div className="flex flex-col items-center gap-2 text-text-muted">
-                <Loader2 className="h-8 w-8 animate-spin text-brand-primary" />
-                <span className="text-xs font-medium">Generating secure document preview…</span>
-              </div>
-            ) : error ? (
-              <div
-                role="alert"
-                className="max-w-md p-6 bg-surface-bg rounded-xl border border-rose-200 text-center space-y-3"
-              >
-                <AlertTriangle className="h-8 w-8 text-rose-600 mx-auto" />
-                <h4 className="text-sm font-bold text-rose-900">Preview Unavailable</h4>
-                <p className="text-xs text-rose-700">{error}</p>
-                {fileUrl && (
-                  <Button size="sm" onClick={handleDownloadClick} className="mt-2 gap-1.5">
-                    <Download className="h-3.5 w-3.5" />
-                    Download File Instead
-                  </Button>
-                )}
-              </div>
-            ) : fileUrl ? (
-              isImage ? (
-                <div className="w-full h-full overflow-auto flex items-center justify-center p-2">
-                  <img
-                    src={fileUrl}
-                    alt={title}
-                    className="max-h-full max-w-full object-contain rounded shadow-xs bg-white"
-                  />
-                </div>
-              ) : (
-                <iframe
-                  src={fileUrl}
-                  title={title}
-                  className="w-full h-full rounded-lg border border-border-default bg-white shadow-xs"
-                />
-              )
-            ) : (
-              <div className="text-xs text-text-muted text-center p-6">
-                No document file available to preview.
-              </div>
-            )}
-          </div>
+          <DocumentPreview
+            fileUrl={fileUrl}
+            isLoadingFile={isLoadingFile}
+            error={error}
+            title={title}
+            onDownload={onDownload}
+            downloadFileName={downloadFileName}
+          />
 
           {/* Right Panel: Review & Sign Sidebar (for Approvers / Admins) */}
           {canReview && (
