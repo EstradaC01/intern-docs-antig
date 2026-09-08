@@ -154,4 +154,36 @@ describe('runDailyDigest — FR-19 threshold, clock, and dedup', () => {
     // Admin escalation must not be suppressed by the same dedup guard.
     expect(sendEmailWithRetry.mock.calls.find((c) => c[0] === 'admin@example.com')).toBeDefined();
   });
+
+  it('uses custom_reminder_days as the approver-reminder threshold when set', async () => {
+    // 6 working days waited, template sla_days=2 (would normally trigger a reminder),
+    // but this requirement's custom_reminder_days=10 means it should NOT be due yet.
+    submissionRows = [
+      baseSubmission({
+        current_step_entered_at: SIX_WORKING_DAYS_AGO,
+        updated_at: SIX_WORKING_DAYS_AGO,
+        requirements: { id: 'req-1', name: 'DTR', custom_reminder_days: 10, routing_templates: { sla_days: 2 } },
+      }),
+    ];
+
+    await runDailyDigest();
+
+    expect(sendEmailWithRetry.mock.calls.find((c) => c[0] === 'approver1@example.com')).toBeUndefined();
+  });
+
+  it('falls back to the routing template sla_days when custom_reminder_days is null', async () => {
+    const fourWorkingDaysAgo = new Date(2026, 0, 8, 9, 0, 0).toISOString();
+    submissionRows = [
+      baseSubmission({
+        current_step_entered_at: fourWorkingDaysAgo,
+        updated_at: fourWorkingDaysAgo,
+        requirements: { id: 'req-1', name: 'DTR', custom_reminder_days: null, routing_templates: { sla_days: 2 } },
+      }),
+    ];
+
+    await runDailyDigest();
+
+    // 4 working days > template sla_days(2) -- reminder should fire, same as before this feature.
+    expect(sendEmailWithRetry.mock.calls.find((c) => c[0] === 'approver1@example.com')).toBeDefined();
+  });
 });

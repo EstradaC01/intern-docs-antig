@@ -32,7 +32,7 @@ export async function runDailyDigest() {
       current_step_entered_at,
       current_holder_id,
       intern_id,
-      requirements(id, name, routing_templates(sla_days)),
+      requirements(id, name, custom_reminder_days, routing_templates(sla_days)),
       users!submissions_intern_id_fkey(email)
     `)
     .eq('state', 'IN_REVIEW');
@@ -66,9 +66,11 @@ export async function runDailyDigest() {
     const stepEnteredAt = new Date(sub.current_step_entered_at || sub.created_at);
     const waitingDays = getWorkingDays(stepEnteredAt, now);
 
-    // Default SLA is 2 days if not specified in routing template
+    // Default SLA is 2 days if not specified in routing template. A requirement's own
+    // custom_reminder_days, when set, overrides the shared routing_template's sla_days --
+    // FR-19's approver-reminder threshold only, not the flat 5-day admin escalation above.
     // @ts-expect-error nested field mapping
-    const sla = sub.requirements?.routing_templates?.sla_days || 2;
+    const sla = sub.requirements?.custom_reminder_days ?? sub.requirements?.routing_templates?.sla_days ?? 2;
 
     if (waitingDays > sla) {
       // PRD FR-19: admin gets copied on anything past 5 working days, independent of
