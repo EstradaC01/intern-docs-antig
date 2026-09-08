@@ -33,7 +33,18 @@ export interface AuditLogEntry {
     id: string;
     name: string;
   } | null;
+  target_routing_template?: {
+    id: string;
+    name: string;
+  } | null;
   submission?: AuditLogSubmissionDetails | null;
+  /**
+   * Raw payload column -- carries a `name` snapshot for DELETE_REQUIREMENT /
+   * DELETE_ROUTING_TEMPLATE (set at delete time in lib/data/requirements.ts /
+   * lib/data/routing.ts) so the audit trail can still show what was deleted after the
+   * row itself, and the live join above, are gone.
+   */
+  payload?: Record<string, unknown> | null;
 }
 
 /**
@@ -84,10 +95,13 @@ export async function enrichAuditLogs(adminClient: any, rawLogs: any[]): Promise
   const reqTargetIds = [
     ...new Set(rawLogs.filter((e) => e.target_type === 'requirements' && e.target_id).map((e) => e.target_id)),
   ];
+  const routingTemplateTargetIds = [
+    ...new Set(rawLogs.filter((e) => e.target_type === 'routing_templates' && e.target_id).map((e) => e.target_id)),
+  ];
 
   const allUserIds = [...new Set([...actorIds, ...userTargetIds])];
 
-  const [usersRes, submissionsRes, requirementsRes] = await Promise.all([
+  const [usersRes, submissionsRes, requirementsRes, routingTemplatesRes] = await Promise.all([
     allUserIds.length > 0
       ? adminClient.from('users').select('id, email, role').in('id', allUserIds)
       : Promise.resolve({ data: [] }),
@@ -107,6 +121,9 @@ export async function enrichAuditLogs(adminClient: any, rawLogs: any[]): Promise
     reqTargetIds.length > 0
       ? adminClient.from('requirements').select('id, name').in('id', reqTargetIds)
       : Promise.resolve({ data: [] }),
+    routingTemplateTargetIds.length > 0
+      ? adminClient.from('routing_templates').select('id, name').in('id', routingTemplateTargetIds)
+      : Promise.resolve({ data: [] }),
   ]);
 
   const usersMap = new Map<string, EnrichedUserRow>(
@@ -118,11 +135,16 @@ export async function enrichAuditLogs(adminClient: any, rawLogs: any[]): Promise
   const requirementsMap = new Map<string, EnrichedRequirementRow>(
     ((requirementsRes.data || []) as EnrichedRequirementRow[]).map((r) => [r.id, r])
   );
+  const routingTemplatesMap = new Map<string, EnrichedRequirementRow>(
+    ((routingTemplatesRes.data || []) as EnrichedRequirementRow[]).map((r) => [r.id, r])
+  );
 
   return rawLogs.map((e) => {
     const actorUser = e.actor_id ? usersMap.get(e.actor_id) || null : null;
     const targetUser = e.target_type === 'users' && e.target_id ? usersMap.get(e.target_id) || null : null;
     const targetReq = e.target_type === 'requirements' && e.target_id ? requirementsMap.get(e.target_id) || null : null;
+    const targetRoutingTemplate =
+      e.target_type === 'routing_templates' && e.target_id ? routingTemplatesMap.get(e.target_id) || null : null;
 
     let submissionDetails: AuditLogSubmissionDetails | null = null;
     if (e.target_type === 'submissions' && e.target_id) {
@@ -153,7 +175,11 @@ export async function enrichAuditLogs(adminClient: any, rawLogs: any[]): Promise
       users: actorUser ? { id: actorUser.id, email: actorUser.email } : null,
       target_user: targetUser ? { id: targetUser.id, email: targetUser.email, role: targetUser.role } : null,
       target_requirement: targetReq ? { id: targetReq.id, name: targetReq.name } : null,
+      target_routing_template: targetRoutingTemplate
+        ? { id: targetRoutingTemplate.id, name: targetRoutingTemplate.name }
+        : null,
       submission: submissionDetails,
+      payload: e.payload ?? null,
     };
   });
 }

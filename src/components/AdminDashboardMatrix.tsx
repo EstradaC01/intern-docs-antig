@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { CheckCircle2, Clock, AlertTriangle, Undo2, Download, LayoutGrid } from 'lucide-react';
 import { AdminDashboardData } from '@lib/data/dashboard';
@@ -19,27 +19,27 @@ export function AdminDashboardMatrix({ data }: { data: AdminDashboardData }) {
   const [filterBatch, setFilterBatch] = useState<string>('ALL');
   const [isExporting, setIsExporting] = useState(false);
   const [viewMode, setViewMode] = useState<'needs-action' | 'full'>('needs-action');
-  // Restore the admin's last column selection for this browser via a lazy initializer
-  // (not an effect -- this is a one-shot read of a store that doesn't change during the
-  // component's lifetime, so there's nothing to subscribe to). Falls back silently to
-  // the default 10 on any storage error (private browsing, cleared site data, SSR pass
-  // where `window` isn't defined yet) -- this is a convenience, never something the
-  // export depends on to function.
-  const [selectedColumns, setSelectedColumns] = useState<string[]>(() => {
-    if (typeof window === 'undefined') return DEFAULT_EXPORT_COLUMN_KEYS;
+  // Starts at the same default on both the server-rendered pass and the client's initial
+  // hydration pass -- reading localStorage inside the useState initializer would return
+  // different values between those two passes (window/localStorage don't exist on the
+  // server) and React would flag it as a hydration mismatch. Restoring the admin's saved
+  // column selection instead happens client-only, one render later, in the effect below --
+  // this is a convenience, never something the export depends on to function.
+  const [selectedColumns, setSelectedColumns] = useState<string[]>(DEFAULT_EXPORT_COLUMN_KEYS);
+
+  useEffect(() => {
     try {
       const saved = window.localStorage.getItem('intern-docs:admin-export-columns');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.every((k) => typeof k === 'string')) {
-          return parsed;
+          setSelectedColumns(parsed);
         }
       }
     } catch {
       // Ignore -- default selection stands.
     }
-    return DEFAULT_EXPORT_COLUMN_KEYS;
-  });
+  }, []);
 
   const handleColumnsChange = (keys: string[]) => {
     setSelectedColumns(keys);
@@ -188,18 +188,18 @@ export function AdminDashboardMatrix({ data }: { data: AdminDashboardData }) {
   const STAT_CARDS = [
     {
       key: 'APPROVED', label: 'Complete', count: summaryCounts.complete, Icon: CheckCircle2,
-      iconIdle: 'bg-emerald-50 text-emerald-600', iconActive: 'bg-emerald-600 text-white',
-      ring: 'ring-emerald-500',
+      iconIdle: 'bg-status-approved/10 text-status-approved-text', iconActive: 'bg-status-approved text-white',
+      ring: 'ring-status-approved',
     },
     {
       key: 'IN_REVIEW', label: 'In Review', count: summaryCounts.inReview, Icon: Clock,
-      iconIdle: 'bg-amber-50 text-amber-600', iconActive: 'bg-amber-600 text-white',
-      ring: 'ring-amber-500',
+      iconIdle: 'bg-status-in-review/10 text-status-in-review-text', iconActive: 'bg-status-in-review text-white',
+      ring: 'ring-status-in-review',
     },
     {
       key: 'OVERDUE', label: 'Overdue', count: summaryCounts.overdue, Icon: AlertTriangle,
-      iconIdle: 'bg-red-50 text-red-600', iconActive: 'bg-red-600 text-white',
-      ring: 'ring-red-600',
+      iconIdle: 'bg-status-overdue/10 text-status-overdue-text', iconActive: 'bg-status-overdue text-white',
+      ring: 'ring-status-overdue',
     },
     {
       key: 'RETURNED', label: 'Returned', count: summaryCounts.returned, Icon: Undo2,
@@ -314,16 +314,18 @@ export function AdminDashboardMatrix({ data }: { data: AdminDashboardData }) {
             </div>
           )}
         </div>
-        <ColumnPicker selectedKeys={selectedColumns} onChange={handleColumnsChange} />
-        <Button
-          onClick={handleExport}
-          disabled={isExporting}
-          variant="outline"
-          className="border-brand-primary text-brand-primary hover:bg-brand-primary/5 hover:border-brand-primary hover:text-brand-primary font-semibold gap-1.5"
-        >
-          <Download className="h-3.5 w-3.5" aria-hidden="true" />
-          {isExporting ? 'Exporting...' : 'Export CSV'}
-        </Button>
+        <div className="flex items-center gap-2 lg:pl-4 lg:border-l lg:border-border-default">
+          <ColumnPicker selectedKeys={selectedColumns} onChange={handleColumnsChange} />
+          <Button
+            onClick={handleExport}
+            disabled={isExporting}
+            variant="outline"
+            className="border-brand-primary text-brand-primary hover:bg-brand-primary/5 hover:border-brand-primary hover:text-brand-primary font-semibold gap-1.5"
+          >
+            <Download className="h-3.5 w-3.5" aria-hidden="true" />
+            {isExporting ? 'Exporting...' : 'Export CSV'}
+          </Button>
+        </div>
       </div>
 
       {/* Matrix */}

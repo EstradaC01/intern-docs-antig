@@ -6,6 +6,19 @@ import { Button } from './ui/button';
 import { DocumentViewerModal } from './DocumentViewerModal';
 import { AuditLogEntry } from '@lib/data/audit';
 
+/**
+ * DELETE_REQUIREMENT / DELETE_ROUTING_TEMPLATE snapshot the target's name into
+ * audit_log.payload at delete time (lib/data/requirements.ts, lib/data/routing.ts)
+ * specifically so the trail still shows what was deleted once the live join above
+ * has nothing left to resolve.
+ */
+function getDeletedTargetName(payload: AuditLogEntry['payload']): string | null {
+  if (payload && typeof payload === 'object' && typeof payload.name === 'string') {
+    return payload.name;
+  }
+  return null;
+}
+
 interface AuditLogTableProps {
   initialLogs: AuditLogEntry[];
   onGetDownloadUrlAction?: (
@@ -123,18 +136,18 @@ export function AuditLogTable({ initialLogs, onGetDownloadUrlAction }: AuditLogT
 
   const getActionBadgeColor = (action: string) => {
     if (action.includes('SUBMIT')) {
-      return 'bg-blue-50 text-blue-700 border-blue-200';
+      return 'bg-status-submitted/10 text-status-submitted-text border-status-submitted/30';
     }
     if (action.includes('APPROVE')) {
-      return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      return 'bg-status-approved/10 text-status-approved-text border-status-approved/30';
     }
     if (action.includes('RETURN') || action.includes('DENIED') || action.includes('FAILED')) {
-      return 'bg-rose-50 text-rose-700 border-rose-200';
+      return 'bg-status-returned/10 text-status-returned-text border-status-returned/30';
     }
     if (action.includes('PURGE') || action.includes('EXPIRE')) {
-      return 'bg-amber-50 text-amber-700 border-amber-200';
+      return 'bg-status-in-review/10 text-status-in-review-text border-status-in-review/30';
     }
-    return 'bg-slate-100 text-slate-700 border-slate-200';
+    return 'bg-surface-muted text-text-muted border-border-default';
   };
 
   return (
@@ -189,7 +202,7 @@ export function AuditLogTable({ initialLogs, onGetDownloadUrlAction }: AuditLogT
       </div>
 
       {errorMsg && (
-        <div role="alert" className="rounded-lg bg-rose-50 p-4 text-sm text-rose-800 border border-rose-200 shadow-xs">
+        <div role="alert" className="rounded-lg bg-status-returned/10 p-4 text-sm text-status-returned-text border border-status-returned/30 shadow-xs">
           {errorMsg}
         </div>
       )}
@@ -233,8 +246,8 @@ export function AuditLogTable({ initialLogs, onGetDownloadUrlAction }: AuditLogT
                   <div className="space-y-1.5">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span className="font-bold text-text-primary">📄 {log.submission.requirement_name}</span>
-                      <span className="text-[10px] font-semibold text-slate-700 bg-slate-100 px-1.5 rounded border border-slate-200">v{log.submission.version_number}</span>
-                      <span className="text-[10px] font-mono text-slate-500 bg-slate-50 px-1.5 rounded border border-slate-200">{log.submission.state}</span>
+                      <span className="text-[10px] font-semibold text-text-muted bg-surface-muted px-1.5 rounded border border-border-default">v{log.submission.version_number}</span>
+                      <span className="text-[10px] font-mono text-text-muted bg-surface-muted px-1.5 rounded border border-border-default">{log.submission.state}</span>
                     </div>
                     {log.submission.intern_email && (
                       <div className="text-[11px] text-text-muted">
@@ -263,6 +276,10 @@ export function AuditLogTable({ initialLogs, onGetDownloadUrlAction }: AuditLogT
                   </div>
                 ) : log.target_requirement ? (
                   <span className="font-semibold">📋 {log.target_requirement.name}</span>
+                ) : log.target_routing_template ? (
+                  <span className="font-semibold">🔀 {log.target_routing_template.name}</span>
+                ) : getDeletedTargetName(log.payload) ? (
+                  <span className="font-medium text-text-muted italic">{getDeletedTargetName(log.payload)} (deleted)</span>
                 ) : (
                   <span className="font-medium">{humanizeCode(log.target_type)}</span>
                 )}
@@ -345,10 +362,10 @@ export function AuditLogTable({ initialLogs, onGetDownloadUrlAction }: AuditLogT
                             <span className="font-bold text-text-primary truncate max-w-[200px]" title={log.submission.requirement_name}>
                               📄 {log.submission.requirement_name}
                             </span>
-                            <span className="text-[10px] font-semibold text-slate-700 bg-slate-100 px-1 rounded border border-slate-200 shrink-0">
+                            <span className="text-[10px] font-semibold text-text-muted bg-surface-muted px-1 rounded border border-border-default shrink-0">
                               v{log.submission.version_number}
                             </span>
-                            <span className="text-[10px] font-mono text-slate-500 bg-slate-50 px-1 rounded border border-slate-200 shrink-0">
+                            <span className="text-[10px] font-mono text-text-muted bg-surface-muted px-1 rounded border border-border-default shrink-0">
                               {log.submission.state}
                             </span>
                           </div>
@@ -396,6 +413,26 @@ export function AuditLogTable({ initialLogs, onGetDownloadUrlAction }: AuditLogT
                           <span className="text-[10px] text-text-muted font-mono">
                             {log.target_id?.substring(0, 8)}…
                           </span>
+                        </div>
+                      ) : log.target_routing_template ? (
+                        <div className="flex flex-col space-y-0.5 min-w-0">
+                          <span className="font-semibold text-text-primary truncate" title={log.target_routing_template.name}>
+                            🔀 {log.target_routing_template.name}
+                          </span>
+                          <span className="text-[10px] text-text-muted font-mono">
+                            {log.target_id?.substring(0, 8)}…
+                          </span>
+                        </div>
+                      ) : getDeletedTargetName(log.payload) ? (
+                        <div className="flex flex-col space-y-0.5 min-w-0">
+                          <span className="font-medium text-text-muted italic truncate" title={getDeletedTargetName(log.payload)!}>
+                            {getDeletedTargetName(log.payload)} (deleted)
+                          </span>
+                          {log.target_id && (
+                            <span className="text-[10px] text-text-muted font-mono truncate" title={log.target_id}>
+                              {log.target_id?.substring(0, 12)}…
+                            </span>
+                          )}
                         </div>
                       ) : (
                         <div className="flex flex-col space-y-0.5 min-w-0">
@@ -454,7 +491,7 @@ export function AuditLogTable({ initialLogs, onGetDownloadUrlAction }: AuditLogT
                   internEmail: viewerItem.log.submission.intern_email,
                   versionNumber: viewerItem.log.submission.version_number,
                   statusBadge: (
-                    <span className="text-[10px] font-semibold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                    <span className="text-[10px] font-semibold text-text-muted bg-surface-muted px-1.5 py-0.5 rounded border border-border-default">
                       {viewerItem.log.submission.state}
                     </span>
                   ),

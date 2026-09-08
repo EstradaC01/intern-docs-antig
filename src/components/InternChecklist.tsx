@@ -246,14 +246,14 @@ export function InternChecklist({
       {downloadError && (
         <div
           role="alert"
-          className="flex items-start justify-between gap-3 rounded-xl bg-rose-50 p-3.5 text-xs text-rose-800 border border-rose-200"
+          className="flex items-start justify-between gap-3 rounded-xl bg-status-returned/10 p-3.5 text-xs text-status-returned-text border border-status-returned/30"
         >
           <span>{downloadError}</span>
           <button
             type="button"
             onClick={() => setDownloadError(null)}
             aria-label="Dismiss error"
-            className="shrink-0 p-0.5 rounded text-rose-600 hover:text-rose-800"
+            className="shrink-0 p-0.5 rounded text-status-returned hover:text-status-returned-text"
           >
             <XIcon className="h-4 w-4" />
           </button>
@@ -288,13 +288,13 @@ export function InternChecklist({
         </div>
       </div>
       {exportApprovedError && (
-        <div role="alert" className="flex items-start justify-between gap-3 rounded-xl bg-rose-50 p-3.5 text-xs text-rose-800 border border-rose-200">
+        <div role="alert" className="flex items-start justify-between gap-3 rounded-xl bg-status-returned/10 p-3.5 text-xs text-status-returned-text border border-status-returned/30">
           <span>{exportApprovedError}</span>
           <button
             type="button"
             onClick={() => setExportApprovedError(null)}
             aria-label="Dismiss error"
-            className="shrink-0 p-0.5 rounded text-rose-600 hover:text-rose-800"
+            className="shrink-0 p-0.5 rounded text-status-returned hover:text-status-returned-text"
           >
             <XIcon className="h-4 w-4" />
           </button>
@@ -402,7 +402,7 @@ export function InternChecklist({
                       size="sm"
                       variant="outline"
                       onClick={() => handleDownload(item, true)}
-                      className="border-status-approved/30 bg-status-approved/10 text-emerald-800 hover:bg-status-approved/20"
+                      className="border-status-approved/30 bg-status-approved/10 text-status-approved-text hover:bg-status-approved/20"
                     >
                       <svg className="h-3.5 w-3.5 text-status-approved" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -446,7 +446,7 @@ export function InternChecklist({
                       <span
                         className={
                           item.daysRemaining < 0 || item.isOverdue
-                            ? 'text-red-600 font-bold'
+                            ? 'text-status-overdue font-bold'
                             : item.daysRemaining <= 3
                             ? 'text-brand-accent font-semibold'
                             : 'text-text-muted'
@@ -471,10 +471,10 @@ export function InternChecklist({
 
                 {/* Workflow / Required Signatories */}
                 <div className="pt-1.5 border-t border-border-default/60 flex flex-wrap items-center justify-between gap-1.5 text-[11px]">
-                  <span className="text-slate-600">
+                  <span className="text-text-muted">
                     Template: <strong className="text-text-primary">{req.routing_templates?.name || 'Default Workflow'}</strong>
                   </span>
-                  <span className="font-medium text-slate-700 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
+                  <span className="font-medium text-text-muted bg-surface-muted px-2 py-0.5 rounded border border-border-default">
                     Required Signatories: {req.routing_templates?.steps && req.routing_templates.steps.length > 0
                       ? req.routing_templates.steps.map((s) => (s.role === 'admin' ? 'Admin' : 'Supervisor')).join(' → ')
                       : 'Supervisor (1-Step)'}
@@ -484,33 +484,33 @@ export function InternChecklist({
 
               {/* Return Comment Alert Box */}
               {item.state === 'RETURNED' && activeVer?.return_comment && (
-                <div className="mt-3 rounded-lg bg-red-50 p-3 text-xs border border-red-200 text-red-900">
-                  <div className="flex items-center gap-1.5 font-bold mb-1 text-red-800">
-                    <svg className="h-3.5 w-3.5 shrink-0 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="mt-3 rounded-lg bg-status-returned/10 p-3 text-xs border border-status-returned/30 text-status-returned-text">
+                  <div className="flex items-center gap-1.5 font-bold mb-1 text-status-returned-text">
+                    <svg className="h-3.5 w-3.5 shrink-0 text-status-returned" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                     <span>Supervisor Return Feedback (v{activeVer.version_number}):</span>
                   </div>
-                  <p className="pl-5 italic text-red-950">&ldquo;{activeVer.return_comment}&rdquo;</p>
+                  <p className="pl-5 italic text-status-returned-text">&ldquo;{activeVer.return_comment}&rdquo;</p>
                 </div>
               )}
 
               {/* Approved Attestation Banner with Signed By Information */}
               {item.state === 'APPROVED' && latestAppr && (
-                <div className="mt-3 rounded-xl bg-emerald-50/90 p-3 text-xs border border-emerald-200 text-emerald-950 space-y-2">
+                <div className="mt-3 rounded-xl bg-status-approved/10 p-3 text-xs border border-status-approved/30 text-status-approved-text space-y-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-emerald-700 font-bold flex items-center gap-1.5">
-                        <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <span className="text-status-approved-text font-bold flex items-center gap-1.5">
+                        <svg className="w-4 h-4 text-status-approved" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         Digitally Signed & Approved
                       </span>
-                      <span className="text-emerald-700 text-[11px]">
+                      <span className="text-status-approved-text text-[11px]">
                         on {new Date(latestAppr.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                       </span>
                     </div>
-                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-status-approved-text bg-status-approved/20 px-2 py-0.5 rounded-full border border-status-approved/40">
                       <svg className="h-3 w-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
@@ -519,19 +519,19 @@ export function InternChecklist({
                   </div>
 
                   {/* Signatures List */}
-                  <div className="pt-1.5 border-t border-emerald-200/60 flex flex-wrap items-center gap-2 text-[11px]">
-                    <span className="font-semibold text-emerald-950">Signed by:</span>
+                  <div className="pt-1.5 border-t border-status-approved/30 flex flex-wrap items-center gap-2 text-[11px]">
+                    <span className="font-semibold text-status-approved-text">Signed by:</span>
                     {item.approvals && item.approvals.length > 0 ? (
                       item.approvals.map((appr, idx) => (
-                        <span key={appr.id || idx} className="inline-flex items-center gap-1.5 bg-white/95 px-2.5 py-1 rounded-lg border border-emerald-200 shadow-2xs font-mono text-[11px] text-emerald-900">
-                          <span className="font-sans font-semibold text-emerald-800">
+                        <span key={appr.id || idx} className="inline-flex items-center gap-1.5 bg-white/95 px-2.5 py-1 rounded-lg border border-status-approved/30 shadow-2xs font-mono text-[11px] text-status-approved-text">
+                          <span className="font-sans font-semibold text-status-approved-text">
                             {appr.step ? `Step ${appr.step}:` : `Step ${idx + 1}:`}
                           </span>
                           <span>{appr.users?.full_name || appr.users?.email || (appr.step === 2 ? 'admin@makerspace.com' : 'supervisor@makerspace.com')}</span>
                         </span>
                       ))
                     ) : (
-                      <span className="font-mono text-emerald-900">{latestAppr.users?.full_name || latestAppr.users?.email || 'Authorized Signatory'}</span>
+                      <span className="font-mono text-status-approved-text">{latestAppr.users?.full_name || latestAppr.users?.email || 'Authorized Signatory'}</span>
                     )}
                   </div>
                 </div>
@@ -543,11 +543,11 @@ export function InternChecklist({
                 const critical = days <= 1;
                 const urgent = days <= 7;
                 const tone = critical
-                  ? 'bg-red-100 border-red-300 text-red-950'
+                  ? 'bg-status-overdue/15 border-status-overdue/40 text-status-overdue-text'
                   : urgent
-                  ? 'bg-amber-100 border-amber-300 text-amber-950'
-                  : 'bg-amber-50 border-amber-200 text-amber-900';
-                const iconTone = critical ? 'text-red-600' : 'text-amber-600';
+                  ? 'bg-status-in-review/20 border-status-in-review/40 text-status-in-review-text'
+                  : 'bg-status-in-review/10 border-status-in-review/30 text-status-in-review-text';
+                const iconTone = critical ? 'text-status-overdue' : 'text-status-in-review-text';
                 return (
                   <div role="alert" className={`mt-3 rounded-lg p-2.5 text-xs border flex items-center gap-2 ${tone} ${critical ? 'font-semibold' : ''}`}>
                     <svg className={`h-4 w-4 shrink-0 ${iconTone} ${critical ? 'motion-safe:animate-pulse' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -574,12 +574,12 @@ export function InternChecklist({
                   {modalMode === 'upload' ? `Submit ${selectedItem.requirement.name}` : `Re-upload Revision for ${selectedItem.requirement.name}`}
                 </DialogTitle>
                 <p className="text-xs text-text-muted">
-                  Select your document to submit. Accepted formats: {selectedItem.requirement.accepted_types.join(', ')} (Max {selectedItem.requirement.max_size_mb} MB).
+                  Select your document to submit. Accepted formats: {selectedItem.requirement.accepted_types.map((t) => t.split('/')[1]?.toUpperCase()).join(', ')} (Max {selectedItem.requirement.max_size_mb} MB).
                 </p>
               </DialogHeader>
 
               {uploadError && (
-                <div role="alert" className="rounded-lg bg-rose-50 p-3 text-xs text-rose-800 border border-rose-200">
+                <div role="alert" className="rounded-lg bg-status-returned/10 p-3 text-xs text-status-returned-text border border-status-returned/30">
                   {uploadError}
                 </div>
               )}
