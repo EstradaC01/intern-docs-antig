@@ -32,7 +32,7 @@ export const emailTemplates = {
   deletionWarning: (reqName: string, daysRemaining: number) => `
     <p><strong>Warning: Data Retention Policy</strong></p>
     <p>Your document for <strong>${reqName}</strong> is scheduled for permanent deletion in ${daysRemaining} days according to the retention policy.</p>
-    <p>If you need a copy of this document, please log in to the InternDocs portal and download it before the deadline.</p>
+    <p>Log in to the InternDocs portal and use "Download all approved documents" on your dashboard to save a copy before the deadline.</p>
   `,
   
   dailyReminderApprover: (count: number) => `
