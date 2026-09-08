@@ -4,8 +4,10 @@ import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { CheckCircle2, Clock, AlertTriangle, Undo2, Download, LayoutGrid } from 'lucide-react';
 import { AdminDashboardData } from '@lib/data/dashboard';
+import { DEFAULT_EXPORT_COLUMN_KEYS } from '@lib/export/columns';
 import { StatusBadge } from './StatusBadge';
 import { Button } from './ui/button';
+import { ColumnPicker } from './ColumnPicker';
 
 const NEEDS_ACTION_STATES = new Set(['IN_REVIEW', 'RETURNED']);
 
@@ -17,6 +19,36 @@ export function AdminDashboardMatrix({ data }: { data: AdminDashboardData }) {
   const [filterBatch, setFilterBatch] = useState<string>('ALL');
   const [isExporting, setIsExporting] = useState(false);
   const [viewMode, setViewMode] = useState<'needs-action' | 'full'>('needs-action');
+  // Restore the admin's last column selection for this browser via a lazy initializer
+  // (not an effect -- this is a one-shot read of a store that doesn't change during the
+  // component's lifetime, so there's nothing to subscribe to). Falls back silently to
+  // the default 10 on any storage error (private browsing, cleared site data, SSR pass
+  // where `window` isn't defined yet) -- this is a convenience, never something the
+  // export depends on to function.
+  const [selectedColumns, setSelectedColumns] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return DEFAULT_EXPORT_COLUMN_KEYS;
+    try {
+      const saved = window.localStorage.getItem('intern-docs:admin-export-columns');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.every((k) => typeof k === 'string')) {
+          return parsed;
+        }
+      }
+    } catch {
+      // Ignore -- default selection stands.
+    }
+    return DEFAULT_EXPORT_COLUMN_KEYS;
+  });
+
+  const handleColumnsChange = (keys: string[]) => {
+    setSelectedColumns(keys);
+    try {
+      window.localStorage.setItem('intern-docs:admin-export-columns', JSON.stringify(keys));
+    } catch {
+      // Ignore -- selection still works for this session, just won't persist.
+    }
+  };
 
   // Derive unique approvers for filter dropdown
   const approvers = useMemo(() => {
@@ -133,7 +165,8 @@ export function AdminDashboardMatrix({ data }: { data: AdminDashboardData }) {
     try {
       // In a real app we'd call a server action here to audit log and get the CSV.
       // For now we'll do a client-side export and assume the server route is used for the real FR-6.
-      const res = await fetch(`/api/admin/export?req=${filterReq}&state=${filterState}&appr=${filterApprover}&school=${encodeURIComponent(filterSchool)}&batch=${encodeURIComponent(filterBatch)}`);
+      const colsQuery = selectedColumns.length > 0 ? `&cols=${selectedColumns.join(',')}` : '';
+      const res = await fetch(`/api/admin/export?req=${filterReq}&state=${filterState}&appr=${filterApprover}&school=${encodeURIComponent(filterSchool)}&batch=${encodeURIComponent(filterBatch)}${colsQuery}`);
       if (!res.ok) throw new Error('Export failed');
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
@@ -281,6 +314,7 @@ export function AdminDashboardMatrix({ data }: { data: AdminDashboardData }) {
             </div>
           )}
         </div>
+        <ColumnPicker selectedKeys={selectedColumns} onChange={handleColumnsChange} />
         <Button
           onClick={handleExport}
           disabled={isExporting}
