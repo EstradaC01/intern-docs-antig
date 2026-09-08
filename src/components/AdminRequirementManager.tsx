@@ -293,7 +293,7 @@ export function AdminRequirementManager({
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold text-text-primary mb-1">Routing Template</label>
                   <select
@@ -318,24 +318,25 @@ export function AdminRequirementManager({
                     className="w-full rounded-xl border border-border-default p-2.5 text-text-primary focus:border-brand-primary outline-none"
                   />
                 </div>
-                <div>
-                  <label className="block font-semibold text-text-primary mb-1">
-                    Custom Reminder Threshold (days)
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={30}
-                    value={customReminderDays}
-                    onChange={(e) => setCustomReminderDays(e.target.value)}
-                    placeholder="Uses template default"
-                    className="w-full rounded-xl border border-border-default p-2.5 text-text-primary focus:border-brand-primary outline-none"
-                  />
-                  <p className="text-[10px] text-text-muted mt-1">
-                    Optional. Overrides the routing template&apos;s SLA for the approver
-                    reminder digest only. Leave blank to use the template default.
-                  </p>
-                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-text-primary mb-1">
+                  Custom Reminder Threshold (days)
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={30}
+                  value={customReminderDays}
+                  onChange={(e) => setCustomReminderDays(e.target.value)}
+                  placeholder="Uses template default"
+                  className="w-full sm:w-1/2 rounded-xl border border-border-default p-2.5 text-text-primary focus:border-brand-primary outline-none"
+                />
+                <p className="text-[10px] text-text-muted mt-1">
+                  Optional. Overrides the routing template&apos;s SLA for the approver reminder
+                  digest only. Leave blank to use the template default.
+                </p>
               </div>
 
               <div>
